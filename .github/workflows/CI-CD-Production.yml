@@ -1,9 +1,6 @@
 name: CI/CD Pipeline Production
 
 on:
-push:
-  branches:
-      - main
   pull_request:
     branches:
       - main
@@ -49,6 +46,7 @@ jobs:
           echo "Ejecutando test: Dado que no hay ninguna reserva registrada, Cuándo lo creo a nivel de servicio, Entonces la creación será exitosa."
           echo "Ejecutando test: Dado que tengo 1 reserva registrada, Cuándo la elimino a nivel de servicio, Entonces la eliminación será exitosa."
           echo "Ejecutando test: Dado que tengo 1 reserva registrada, Cuándo la elimino y consulto a nivel de servicio, Entonces el resultado de la consulta no retornará ningún resultado."
+
   deploy:
     name: Deploy
     needs: test
