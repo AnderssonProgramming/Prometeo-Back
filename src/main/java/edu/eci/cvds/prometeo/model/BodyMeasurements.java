@@ -1,17 +1,17 @@
 package edu.eci.cvds.prometeo.model;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-
-import jakarta.persistence.Column;
-import jakarta.persistence.Embeddable;
 import java.util.HashMap;
 import java.util.Map;
 
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Embeddable;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Embeddable
 @Getter
@@ -42,11 +42,11 @@ public class BodyMeasurements {
     @Column(name = "additional_measures", columnDefinition = "jsonb")
     private Map<String, Double> additionalMeasures = new HashMap<>();
 
-    public double getBmi() {
+    public double getBmi(double weight) {
         if (height <= 0) return 0;
         // BMI = weight / (height in meters)²
-        // Note: This would require weight to be passed as an argument
-        return 0;
+        double heightInMeters = height / 100.0; // Convertir cm a metros
+        return weight / (heightInMeters * heightInMeters);
     }
 
     public double getWaistToHipRatio() {
@@ -55,7 +55,7 @@ public class BodyMeasurements {
     }
 
     public boolean hasImprovedFrom(BodyMeasurements previous) {
-        // Implementation would depend on specific fitness goals
-        return false;
+        // Implementación simplificada
+        return waistCircumference < previous.waistCircumference;
     }
 }

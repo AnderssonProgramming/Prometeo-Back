@@ -45,17 +45,17 @@ public class Routine extends AuditableEntity {
     public void addExercise(RoutineExercise exercise) {
         exercises.add(exercise);
     }
+    // TODO: Fix lombok issue with @Setter and @Getter for exercises
+    // public void removeExercise(UUID exerciseId) {
+    //     exercises.removeIf(exercise -> exercise.getId().equals(exerciseId));
+    // }
 
-    public void removeExercise(UUID exerciseId) {
-        exercises.removeIf(exercise -> exercise.getId().equals(exerciseId));
-    }
-
-    public void updateExerciseOrder(UUID exerciseId, int newOrder) {
-        exercises.stream()
-                .filter(exercise -> exercise.getId().equals(exerciseId))
-                .findFirst()
-                .ifPresent(exercise -> exercise.setSequenceOrder(newOrder));
-    }
+    // public void updateExerciseOrder(UUID exerciseId, int newOrder) {
+    //     exercises.stream()
+    //             .filter(exercise -> exercise.getId().equals(exerciseId))
+    //             .findFirst()
+    //             .ifPresent(exercise -> exercise.setSequenceOrder(newOrder));
+    // }
 
     public boolean isAppropriateFor(PhysicalProgress progress) {
         // Implementación simplificada
