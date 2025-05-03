@@ -3,6 +3,7 @@ package edu.eci.cvds.prometeo.service;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
+import java.util.Optional;
 
 /**
  * Service for managing notifications in the system
