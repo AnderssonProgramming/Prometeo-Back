@@ -20,7 +20,7 @@ public class User extends AuditableEntity {
 
     @Column(name = "username", unique = true, nullable = false)
     private String username;
-
+    // TODO: Delete useless fields
     @Column(name = "password", nullable = false)
     private String password;
 

@@ -27,7 +27,7 @@ public class Weight {
     public enum WeightUnit {
         KG, LB
     }
-
+    
     public double convertTo(WeightUnit targetUnit) {
         if (this.unit == targetUnit) {
             return this.value;

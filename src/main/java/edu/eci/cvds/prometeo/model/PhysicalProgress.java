@@ -1,6 +1,7 @@
 package edu.eci.cvds.prometeo.model;
 
 import edu.eci.cvds.prometeo.model.base.AuditableEntity;
+import edu.eci.cvds.prometeo.model.Weight.WeightUnit;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -36,13 +37,14 @@ public class PhysicalProgress extends AuditableEntity {
     @Column(name = "trainer_observations")
     private String trainerObservations;
 
-    public void updateWeight(double weightValue) {
-        if (this.weight == null) {
-            this.weight = new Weight(weightValue, Weight.WeightUnit.KG);
-        } else {
-            this.weight.setValue(weightValue);
-        }
-    }
+    // TODO: Fix lombok issue with @AllArgsConstructor and @NoArgsConstructor
+    // public void updateWeight(double weightValue) {
+    //     if (this.weight == null) {
+    //         this.weight = new Weight(weightValue, WeightUnit.KG);
+    //     } else {
+    //         this.weight.setValue(weightValue);
+    //     }
+    // }
 
     public void updateMeasurements(BodyMeasurements measurements) {
         this.measurements = measurements;
