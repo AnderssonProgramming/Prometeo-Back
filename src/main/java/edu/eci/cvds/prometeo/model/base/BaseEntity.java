@@ -39,4 +39,8 @@ public abstract class BaseEntity {
     public boolean isDeleted() {
         return deletedAt != null;
     }
+
+    public UUID getId() {
+        return id;
+    }   
 }

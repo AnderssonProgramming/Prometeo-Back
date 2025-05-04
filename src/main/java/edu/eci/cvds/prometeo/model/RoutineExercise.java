@@ -42,4 +42,8 @@ public class RoutineExercise extends BaseEntity {
         this.repetitions = repetitions;
         this.restTime = restTime;
     }
+
+    public void setSequenceOrder(int sequenceOrder) {
+        this.sequenceOrder = sequenceOrder;
+    }   
 }
