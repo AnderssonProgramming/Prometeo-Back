@@ -46,16 +46,24 @@ public class Routine extends AuditableEntity {
         exercises.add(exercise);
     }
     // TODO: Fix lombok issue with @Setter and @Getter for exercises
-    // public void removeExercise(UUID exerciseId) {
-    //     exercises.removeIf(exercise -> exercise.getId().equals(exerciseId));
-    // }
+    public void removeExercise(UUID exerciseId) {
+        exercises.removeIf(exercise -> {
+            // Get the ID directly from the base class or through inheritance
+            UUID id = exercise.getId(); // This should work if properly inherited
+            
+            // If still having issues, you could try accessing the field if it's visible:
+            // UUID id = ((BaseEntity)exercise).getId();
+            
+            return exerciseId.equals(id);
+        });
+    }
 
-    // public void updateExerciseOrder(UUID exerciseId, int newOrder) {
-    //     exercises.stream()
-    //             .filter(exercise -> exercise.getId().equals(exerciseId))
-    //             .findFirst()
-    //             .ifPresent(exercise -> exercise.setSequenceOrder(newOrder));
-    // }
+    public void updateExerciseOrder(UUID exerciseId, int newOrder) {
+        exercises.stream()
+                .filter(exercise -> exercise.getId().equals(exerciseId))
+                .findFirst()
+                .ifPresent(exercise -> exercise.setSequenceOrder(newOrder));
+    }
 
     public boolean isAppropriateFor(PhysicalProgress progress) {
         // Implementación simplificada

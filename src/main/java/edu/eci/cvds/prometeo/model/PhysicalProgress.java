@@ -38,13 +38,13 @@ public class PhysicalProgress extends AuditableEntity {
     private String trainerObservations;
 
     // TODO: Fix lombok issue with @AllArgsConstructor and @NoArgsConstructor
-    // public void updateWeight(double weightValue) {
-    //     if (this.weight == null) {
-    //         this.weight = new Weight(weightValue, WeightUnit.KG);
-    //     } else {
-    //         this.weight.setValue(weightValue);
-    //     }
-    // }
+    public void updateWeight(double weightValue) {
+        if (this.weight == null) {
+            this.weight = new Weight(weightValue, WeightUnit.KG);
+        } else {
+            this.weight.setValue(weightValue);
+        }
+    }
 
     public void updateMeasurements(BodyMeasurements measurements) {
         this.measurements = measurements;

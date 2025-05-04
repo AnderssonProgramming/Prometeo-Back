@@ -32,16 +32,16 @@ public class UserRoutine extends BaseEntity {
     @Column(name = "end_date")
     private LocalDate endDate;
 
-    @Column(name = "is_active", nullable = false)
-    private boolean isActive;
+    @Column(name = "active", nullable = false)
+    private boolean active;
 
-    public void activate() {
-        this.isActive = true;
-    }
+    // public void activate() {
+    //     this.isActive = true;
+    // }
 
-    public void deactivate() {
-        this.isActive = false;
-    }
+    // public void deactivate() {
+    //     this.isActive = false;
+    // }
 
     public void extend(int days) {
         if (this.endDate != null) {
