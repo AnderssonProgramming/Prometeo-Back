@@ -18,78 +18,44 @@ import java.util.UUID;
 public interface EquipmentRepository extends JpaRepository<Equipment, UUID> {
     
     /**
-     * Checks if equipment is available for reservation at a specific date and time
-     * @param equipmentId ID of the equipment
-     * @param date Date for the reservation
-     * @param startTime Start time of the reservation
-     * @param endTime End time of the reservation
-     * @return true if the equipment is available
+     * Find equipment by type
      */
-    @Query("SELECT CASE WHEN COUNT(r) = 0 THEN true ELSE false END FROM Reservation r " +
-           "JOIN r.equipmentIds e " +
-           "WHERE e = :equipmentId " +
-           "AND r.date = :date " +
-           "AND r.status = 'CONFIRMED' " +
-           "AND ((r.startTime <= :endTime AND r.endTime >= :startTime))")
-    boolean isEquipmentAvailable(
-            @Param("equipmentId") UUID equipmentId, 
-            @Param("date") LocalDate date, 
-            @Param("startTime") LocalTime startTime, 
-            @Param("endTime") LocalTime endTime);
+    List<Equipment> findByType(String type);
     
     /**
-     * Finds all equipment by type
-     * @param equipmentType Type of equipment
-     * @return List of equipment of the specified type
-     */
-    List<Equipment> findByEquipmentType(String equipmentType);
-    
-    /**
-     * Finds all available equipment
-     * @return List of equipment with available status
+     * Find equipment by status
      */
     List<Equipment> findByStatus(String status);
     
     /**
-     * Finds all equipment in a specific location
-     * @param location Location to search
-     * @return List of equipment in the location
+     * Find equipment by location
      */
     List<Equipment> findByLocation(String location);
     
     /**
-     * Finds all equipment that targets a specific muscle group
-     * @param muscleGroup Muscle group to target
-     * @return List of equipment targeting the muscle group
+     * Custom query to check if equipment is available at a specific time
      */
-    @Query("SELECT e FROM Equipment e WHERE e.primaryMuscleGroup = :muscleGroup " +
-           "OR e.secondaryMuscleGroups LIKE %:muscleGroup%")
-    List<Equipment> findByMuscleGroup(@Param("muscleGroup") String muscleGroup);
+    @Query("SELECT CASE WHEN COUNT(r) = 0 THEN true ELSE false END FROM Reservation r " +
+           "WHERE :equipmentId MEMBER OF r.equipmentIds " +
+           "AND r.reservationDate = :date " +
+           "AND r.status = 'CONFIRMED' " +
+           "AND (r.startTime >= :endTime OR r.endTime <= :startTime)")
+    boolean isEquipmentAvailable(
+            @Param("equipmentId") UUID equipmentId,
+            @Param("date") LocalDate date,
+            @Param("startTime") LocalTime startTime,
+            @Param("endTime") LocalTime endTime);
     
     /**
-     * Finds equipment that requires maintenance
-     * @param currentDate Reference date
-     * @return List of equipment due for maintenance
+     * Find available equipment by type and date/time
      */
-    @Query("SELECT e FROM Equipment e WHERE e.nextMaintenanceDate <= :currentDate " +
-           "AND e.status != 'MAINTENANCE'")
-    List<Equipment> findEquipmentDueForMaintenance(@Param("currentDate") LocalDate currentDate);
-    
-    /**
-     * Finds most reserved equipment in a date range
-     * @param startDate Start date
-     * @param endDate End date
-     * @param limit Maximum number of results
-     * @return List of equipment IDs with their reservation count
-     */
-    @Query(value = "SELECT e.id, COUNT(r.id) as count FROM equipment e " +
-                  "JOIN reservation_equipment re ON e.id = re.equipment_id " +
-                  "JOIN reservations r ON re.reservation_id = r.id " +
-                  "WHERE r.date BETWEEN :startDate AND :endDate " +
-                  "GROUP BY e.id ORDER BY count DESC LIMIT :limit", 
-           nativeQuery = true)
-    List<Object[]> findMostReservedEquipment(
-            @Param("startDate") LocalDate startDate, 
-            @Param("endDate") LocalDate endDate, 
-            @Param("limit") int limit);
+    @Query("SELECT e FROM Equipment e WHERE e.type = :type AND e.status = 'AVAILABLE' " +
+           "AND NOT EXISTS (SELECT 1 FROM Reservation r WHERE e.id MEMBER OF r.equipmentIds " +
+           "AND r.reservationDate = :date AND r.status = 'CONFIRMED' " +
+           "AND ((r.startTime < :endTime AND r.endTime > :startTime)))")
+    List<Equipment> findAvailableEquipmentByTypeAndDateTime(
+            @Param("type") String type,
+            @Param("date") LocalDate date,
+            @Param("startTime") LocalTime startTime,
+            @Param("endTime") LocalTime endTime);
 }

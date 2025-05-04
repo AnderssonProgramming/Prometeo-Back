@@ -1,6 +1,5 @@
 package edu.eci.cvds.prometeo.repository;
 
-
 import edu.eci.cvds.prometeo.model.User;
 import edu.eci.cvds.prometeo.model.enums.UserRole;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -13,15 +12,23 @@ import java.util.UUID;
 @Repository
 public interface UserRepository extends JpaRepository<User, UUID> {
     
-    // TODO: Decide which roles are going to be used
-    List<User> findByRole(UserRole role);
-    
-    Optional<User> findByUsername(String username);
-    
-    // TODO: Decide if this search is needed
+    /**
+     * Find user by email
+     */
     Optional<User> findByEmail(String email);
     
-    boolean existsByUsername(String username);
+    /**
+     * Find users by trainer status
+     */
+    List<User> findByIsTrainer(boolean isTrainer);
     
+    /**
+     * Find users by program code
+     */
+    List<User> findByProgramCode(String programCode);
+    
+    /**
+     * Check if a user exists by email
+     */
     boolean existsByEmail(String email);
 }

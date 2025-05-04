@@ -7,77 +7,83 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * Service for managing gym reservations
- * Note: This service requires a Reservation entity that doesn't appear in the provided code.
- * Implementation would need to create this entity.
+ * Service interface for managing gym reservations
  */
 public interface GymReservationService {
     
     /**
-     * Makes a reservation at the gym
-     * @param userId ID of the user
+     * Makes a new reservation for a gym session
+     * 
+     * @param userId User making the reservation
      * @param date Date of the reservation
-     * @param startTime Start time
-     * @param endTime End time
-     * @param equipmentIds Optional IDs of equipment to reserve
-     * @return ID of the created reservation
+     * @param startTime Start time of the reservation
+     * @param endTime End time of the reservation
+     * @param equipmentIds Optional list of equipment IDs to reserve
+     * @return The ID of the created reservation
      */
     UUID makeReservation(UUID userId, LocalDate date, LocalTime startTime, LocalTime endTime, Optional<List<UUID>> equipmentIds);
     
     /**
      * Cancels an existing reservation
-     * @param reservationId ID of the reservation
-     * @param userId ID of the user canceling
+     * 
+     * @param reservationId ID of the reservation to cancel
+     * @param userId ID of the user attempting to cancel
      * @param reason Optional reason for cancellation
-     * @return true if successfully canceled
+     * @return true if successfully cancelled
      */
     boolean cancelReservation(UUID reservationId, UUID userId, Optional<String> reason);
     
     /**
      * Gets upcoming reservations for a user
+     * 
      * @param userId ID of the user
-     * @return List of pending reservations
+     * @return List of upcoming reservation details
      */
     List<Object> getUpcomingReservations(UUID userId);
     
     /**
-     * Gets the reservation history for a user
+     * Gets reservation history for a user within a date range
+     * 
      * @param userId ID of the user
-     * @param startDate Optional start date for filtering
-     * @param endDate Optional end date for filtering
-     * @return List of historical reservations
+     * @param startDate Optional start date for the range
+     * @param endDate Optional end date for the range
+     * @return List of past reservation details
      */
     List<Object> getReservationHistory(UUID userId, Optional<LocalDate> startDate, Optional<LocalDate> endDate);
     
     /**
-     * Updates the time of a reservation
-     * @param reservationId ID of the reservation
-     * @param newDate New date
+     * Updates the time of an existing reservation
+     * 
+     * @param reservationId ID of the reservation to update
+     * @param newDate New date for the reservation
      * @param newStartTime New start time
      * @param newEndTime New end time
-     * @param userId ID of the user making the update
+     * @param userId ID of the user attempting to update
      * @return true if successfully updated
      */
     boolean updateReservationTime(UUID reservationId, LocalDate newDate, LocalTime newStartTime, LocalTime newEndTime, UUID userId);
     
     /**
-     * Checks availability for a specific date and time range
+     * Checks if a time slot is available for reservation
+     * 
      * @param date Date to check
-     * @param startTime Start time
-     * @param endTime End time
-     * @return true if the slot is available
+     * @param startTime Start time to check
+     * @param endTime End time to check
+     * @return true if the time slot is available
      */
     boolean checkAvailability(LocalDate date, LocalTime startTime, LocalTime endTime);
     
     /**
-     * Gets available time slots for a date
+     * Gets available time slots for a specific date
+     * 
      * @param date Date to check
-     * @return List of available time slots
+     * @return List of available time slots with details
      */
     List<Object> getAvailableTimeSlots(LocalDate date);
     
     /**
      * Records attendance for a reservation
+     * 
      * @param reservationId ID of the reservation
      * @param attended Whether the user attended
      * @param trainerId ID of the trainer recording attendance

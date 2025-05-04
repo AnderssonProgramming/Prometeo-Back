@@ -20,16 +20,18 @@ import java.util.UUID;
 @AllArgsConstructor
 public class Equipment extends AuditableEntity {
 
-    // TODO: To define which columns are gonna be the last ones to be updated
-    
+    @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    private UUID id;
+
     @Column(name = "name", nullable = false)
     private String name;
     
     @Column(name = "description")
     private String description;
     
-    @Column(name = "equipment_type", nullable = false)
-    private String equipmentType;
+    @Column(name = "type", nullable = false)
+    private String type;
     
     @Column(name = "location")
     private String location;
@@ -76,6 +78,9 @@ public class Equipment extends AuditableEntity {
     @Column(name = "secondary_muscle_groups")
     private String secondaryMuscleGroups;
     
+    @Column(name = "maintenance_date")
+    private String maintenanceDate;
+
     /**
      * Checks if the equipment is available for use
      * @return true if the equipment is available

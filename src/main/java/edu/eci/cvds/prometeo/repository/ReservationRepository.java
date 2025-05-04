@@ -104,4 +104,15 @@ public interface ReservationRepository extends JpaRepository<Reservation, UUID> 
      * @return List of reservations in that date range
      */
     List<Reservation> findByDateBetween(LocalDate startDate, LocalDate endDate);
+    
+    /**
+     * Count reservations by user ID and date and status
+     */
+    int countByUserIdAndDateAndStatus(UUID userId, LocalDate date, String status);
+    
+    /**
+     * Find reservations by equipment ID and date and status
+     */
+    List<Reservation> findByEquipmentIdsContainingAndDateAndStatus(
+            UUID equipmentId, LocalDate date, String status);
 }

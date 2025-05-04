@@ -51,6 +51,7 @@ public class PrometeoExceptions extends RuntimeException {
     public static final String SOLO_RESERVAS_CONFIRMADAS = "Solo las reservas confirmadas pueden ser marcadas como asistidas";
     public static final String EQUIPAMIENTO_NO_DISPONIBLE = "Ninguno de los equipos solicitados está disponible";
     public static final String NO_EXISTE_EQUIPAMIENTO = "El equipamiento solicitado no existe";
+    public static final String SESION_YA_EXISTE_HORARIO = "Una sesión ya ha sido agendada en este horario";
     
     /**
      * Constructor of the class.
