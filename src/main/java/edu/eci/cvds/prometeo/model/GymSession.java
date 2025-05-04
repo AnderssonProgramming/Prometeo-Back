@@ -68,4 +68,52 @@ public class GymSession extends AuditableEntity {
     public Duration getDuration() {
         return Duration.between(startTime, endTime);
     }
+
+    public LocalDate getSessionDate() {
+        return sessionDate;
+    }
+
+    public void setSessionDate(LocalDate sessionDate) {
+        this.sessionDate = sessionDate;
+    }
+
+    public LocalTime getStartTime() {
+        return startTime;
+    }
+
+    public void setStartTime(LocalTime startTime) {
+        this.startTime = startTime;
+    }
+
+    public LocalTime getEndTime() {
+        return endTime;
+    }
+
+    public void setEndTime(LocalTime endTime) {
+        this.endTime = endTime;
+    }
+
+    public int getMaxCapacity() {
+        return maxCapacity;
+    }
+
+    public void setMaxCapacity(int maxCapacity) {
+        this.maxCapacity = maxCapacity;
+    }
+
+    public int getCurrentCapacity() {
+        return currentCapacity;
+    }
+
+    public void setCurrentCapacity(int currentCapacity) {
+        this.currentCapacity = currentCapacity;
+    }
+
+    public UUID getTrainerId() {
+        return trainerId;
+    }
+
+    public void setTrainerId(UUID trainerId) {
+        this.trainerId = trainerId;
+    }
 }

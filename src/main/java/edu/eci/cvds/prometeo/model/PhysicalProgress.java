@@ -57,4 +57,52 @@ public class PhysicalProgress extends AuditableEntity {
     public void addObservation(String observation) {
         this.trainerObservations = observation;
     }
+
+    public UUID getUserId() {
+        return userId;
+    }
+
+    public void setUserId(UUID userId) {
+        this.userId = userId;
+    }
+
+    public LocalDate getRecordDate() {
+        return recordDate;
+    }
+
+    public void setRecordDate(LocalDate recordDate) {
+        this.recordDate = recordDate;
+    }
+
+    public Weight getWeight() {
+        return weight;
+    }
+
+    public void setWeight(Weight weight) {
+        this.weight = weight;
+    }
+
+    public BodyMeasurements getMeasurements() {
+        return measurements;
+    }
+
+    public void setMeasurements(BodyMeasurements measurements) {
+        this.measurements = measurements;
+    }
+
+    public String getPhysicalGoal() {
+        return physicalGoal;
+    }
+
+    public void setPhysicalGoal(String physicalGoal) {
+        this.physicalGoal = physicalGoal;
+    }
+
+    public String getTrainerObservations() {
+        return trainerObservations;
+    }
+
+    public void setTrainerObservations(String trainerObservations) {
+        this.trainerObservations = trainerObservations;
+    }
 }
