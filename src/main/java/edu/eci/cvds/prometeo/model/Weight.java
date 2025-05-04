@@ -48,4 +48,16 @@ public class Weight {
     public void setValue(double value) {
         this.value = value;
     }
+
+    public double getValue() {
+        return value;
+    }
+
+    public void setUnit(WeightUnit unit) {
+        this.unit = unit;
+    }
+
+    public WeightUnit getUnit() {
+        return unit;
+    }
 }
