@@ -10,8 +10,8 @@ import edu.eci.cvds.prometeo.repository.UserRepository;
 import edu.eci.cvds.prometeo.repository.EquipmentRepository;
 import edu.eci.cvds.prometeo.service.GymReservationService;
 import edu.eci.cvds.prometeo.service.NotificationService;
-import edu.eci.cvds.prometeo.exception.ResourceNotFoundException;
-import edu.eci.cvds.prometeo.exception.BusinessLogicException;
+import edu.eci.cvds.prometeo.model.enums.ReservationStatus;
+import edu.eci.cvds.prometeo.PrometeoExceptions;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -48,15 +48,14 @@ public class GymReservationServiceImpl implements GymReservationService {
     
     @Override
     @Transactional
-    public UUID makeReservation(UUID userId, LocalDate date, LocalTime startTime, LocalTime endTime, 
-                               Optional<List<UUID>> equipmentIds) {
+    public UUID makeReservation(UUID userId, LocalDate date, LocalTime startTime, LocalTime endTime, Optional<List<UUID>> equipmentIds) {
         // Validate user exists
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+                .orElseThrow(() -> new PrometeoExceptions(PrometeoExceptions.USUARIO_NO_ENCONTRADO));
                 
         // Check if time slot is available
         if (!checkAvailability(date, startTime, endTime)) {
-            throw new BusinessLogicException("Selected time slot is not available");
+            throw new PrometeoExceptions(PrometeoExceptions.HORARIO_NO_DISPONIBLE);
         }
         
         // Check if user has reached reservation limit (e.g., 3 active reservations)
@@ -65,27 +64,25 @@ public class GymReservationServiceImpl implements GymReservationService {
                     userId, LocalDate.now(), "CANCELLED");
                     
         if (activeReservations.size() >= 3) {
-            throw new BusinessLogicException("User has reached the maximum number of active reservations");
+            throw new PrometeoExceptions(PrometeoExceptions.LIMITE_RESERVAS_ALCANZADO);
         }
         
         // Find gym session for the selected time slot
         GymSession session = gymSessionRepository
                 .findBySessionDateAndStartTimeLessThanEqualAndEndTimeGreaterThanEqual(
                     date, startTime, endTime)
-                .orElseThrow(() -> new BusinessLogicException("No available gym session for selected time"));
+                .orElseThrow(() -> new PrometeoExceptions(PrometeoExceptions.NO_EXISTE_SESION));
                 
         // Check if session has capacity
         if (!session.hasAvailability()) {
-            throw new BusinessLogicException("Selected session is at full capacity");
+            throw new PrometeoExceptions(PrometeoExceptions.CAPACIDAD_EXCEDIDA);
         }
         
         // Create reservation
         Reservation reservation = new Reservation();
         reservation.setUserId(userId);
-        reservation.setDate(date);
-        reservation.setStartTime(startTime);
-        reservation.setEndTime(endTime);
-        reservation.setStatus("CONFIRMED");
+        reservation.setReservationDate(LocalDateTime.of(date, startTime));
+        reservation.setStatus(ReservationStatus.CONFIRMED);
         reservation.setSessionId(session.getId());
         
         // Add equipment if specified
@@ -117,26 +114,26 @@ public class GymReservationServiceImpl implements GymReservationService {
     @Transactional
     public boolean cancelReservation(UUID reservationId, UUID userId, Optional<String> reason) {
         Reservation reservation = reservationRepository.findById(reservationId)
-                .orElseThrow(() -> new ResourceNotFoundException("Reservation not found"));
+                .orElseThrow(() -> new PrometeoExceptions(PrometeoExceptions.NO_EXISTE_RESERVA));
                 
         // Validate user is the owner
         if (!reservation.getUserId().equals(userId)) {
-            throw new BusinessLogicException("User is not authorized to cancel this reservation");
+            throw new PrometeoExceptions(PrometeoExceptions.USUARIO_NO_AUTORIZADO);
         }
         
         // Check if reservation is already cancelled
         if ("CANCELLED".equals(reservation.getStatus())) {
-            throw new BusinessLogicException("Reservation is already cancelled");
+            throw new PrometeoExceptions(PrometeoExceptions.RESERVA_YA_CANCELADA);
         }
         
         // Check if reservation date is in the past
         if (reservation.getDate().isBefore(LocalDate.now())) {
-            throw new BusinessLogicException("Cannot cancel past reservations");
+            throw new PrometeoExceptions(PrometeoExceptions.NO_CANCELAR_RESERVAS_PASADAS);
         }
         
         // Update session capacity
         GymSession session = gymSessionRepository.findById(reservation.getSessionId())
-                .orElseThrow(() -> new ResourceNotFoundException("Gym session not found"));
+                .orElseThrow(() -> new PrometeoExceptions(PrometeoExceptions.SESION_NO_ENCONTRADA));
         session.cancelReservation();
         gymSessionRepository.save(session);
         
@@ -189,30 +186,30 @@ public class GymReservationServiceImpl implements GymReservationService {
     public boolean updateReservationTime(UUID reservationId, LocalDate newDate, 
                                          LocalTime newStartTime, LocalTime newEndTime, UUID userId) {
         Reservation reservation = reservationRepository.findById(reservationId)
-                .orElseThrow(() -> new ResourceNotFoundException("Reservation not found"));
+                .orElseThrow(() -> new PrometeoExceptions(PrometeoExceptions.NO_EXISTE_RESERVA));
                 
         // Validate user is the owner
         if (!reservation.getUserId().equals(userId)) {
-            throw new BusinessLogicException("User is not authorized to update this reservation");
+            throw new PrometeoExceptions(PrometeoExceptions.USUARIO_NO_AUTORIZADO);
         }
         
         // Check if reservation can be updated (not in the past, not cancelled)
         if (reservation.getDate().isBefore(LocalDate.now())) {
-            throw new BusinessLogicException("Cannot update past reservations");
+            throw new PrometeoExceptions(PrometeoExceptions.FECHA_PASADA);
         }
         
         if ("CANCELLED".equals(reservation.getStatus())) {
-            throw new BusinessLogicException("Cannot update cancelled reservations");
+            throw new PrometeoExceptions(PrometeoExceptions.RESERVA_YA_CANCELADA);
         }
         
         // Check if the new time slot is available
         if (!checkAvailability(newDate, newStartTime, newEndTime)) {
-            throw new BusinessLogicException("Selected time slot is not available");
+            throw new PrometeoExceptions(PrometeoExceptions.HORARIO_NO_DISPONIBLE);
         }
         
         // Release the current gym session
         GymSession oldSession = gymSessionRepository.findById(reservation.getSessionId())
-                .orElseThrow(() -> new ResourceNotFoundException("Gym session not found"));
+                .orElseThrow(() -> new PrometeoExceptions(PrometeoExceptions.SESION_NO_ENCONTRADA));
         oldSession.cancelReservation();
         gymSessionRepository.save(oldSession);
         
@@ -220,11 +217,11 @@ public class GymReservationServiceImpl implements GymReservationService {
         GymSession newSession = gymSessionRepository
                 .findBySessionDateAndStartTimeLessThanEqualAndEndTimeGreaterThanEqual(
                     newDate, newStartTime, newEndTime)
-                .orElseThrow(() -> new BusinessLogicException("No available gym session for selected time"));
+                .orElseThrow(() -> new PrometeoExceptions(PrometeoExceptions.NO_EXISTE_SESION));
                 
         // Check if new session has capacity
         if (!newSession.hasAvailability()) {
-            throw new BusinessLogicException("Selected session is at full capacity");
+            throw new PrometeoExceptions(PrometeoExceptions.CAPACIDAD_EXCEDIDA);
         }
         
         // Reserve the new session
@@ -295,11 +292,11 @@ public class GymReservationServiceImpl implements GymReservationService {
     @Transactional
     public boolean recordAttendance(UUID reservationId, boolean attended, UUID trainerId) {
         Reservation reservation = reservationRepository.findById(reservationId)
-                .orElseThrow(() -> new ResourceNotFoundException("Reservation not found"));
+                .orElseThrow(() -> new PrometeoExceptions(PrometeoExceptions.NO_EXISTE_RESERVA));
                 
         // Only confirmed reservations can be marked as attended
         if (!"CONFIRMED".equals(reservation.getStatus())) {
-            throw new BusinessLogicException("Only confirmed reservations can be marked as attended");
+            throw new PrometeoExceptions(PrometeoExceptions.SOLO_RESERVAS_CONFIRMADAS);
         }
         
         // Update reservation
@@ -332,16 +329,13 @@ public class GymReservationServiceImpl implements GymReservationService {
     }
     
     // Helper methods
-    private List<UUID> validateAndReserveEquipment(List<UUID> equipmentIds, 
-                                                 LocalDate date, 
-                                                 LocalTime startTime, 
-                                                 LocalTime endTime) {
+    private List<UUID> validateAndReserveEquipment(List<UUID> equipmentIds, LocalDate date, LocalTime startTime, LocalTime endTime) {
         List<UUID> validEquipmentIds = new ArrayList<>();
         
         for (UUID equipmentId : equipmentIds) {
             // Check if equipment exists
             Equipment equipment = equipmentRepository.findById(equipmentId)
-                    .orElseThrow(() -> new ResourceNotFoundException("Equipment not found: " + equipmentId));
+                    .orElseThrow(() -> new PrometeoExceptions(PrometeoExceptions.NO_EXISTE_EQUIPAMIENTO + ": " + equipmentId));
                     
             // Check if equipment is available at the requested time
             boolean isAvailable = equipmentRepository.isEquipmentAvailable(
@@ -353,7 +347,7 @@ public class GymReservationServiceImpl implements GymReservationService {
         }
         
         if (validEquipmentIds.isEmpty() && !equipmentIds.isEmpty()) {
-            throw new BusinessLogicException("None of the requested equipment is available");
+            throw new PrometeoExceptions(PrometeoExceptions.EQUIPAMIENTO_NO_DISPONIBLE);
         }
         
         return validEquipmentIds;

@@ -42,6 +42,16 @@ public class PrometeoExceptions extends RuntimeException {
     public static final String OBJETIVO_NO_VALIDO = "El objetivo de la rutina no puede estar vacío";
     public static final String CANCELACION_TARDIA = "No se puede cancelar la reserva con menos de 2 horas de anticipación";
     
+    // Nuevos mensajes para GymReservationService
+    public static final String HORARIO_NO_DISPONIBLE = "El horario seleccionado no está disponible";
+    public static final String LIMITE_RESERVAS_ALCANZADO = "El usuario ha alcanzado el límite máximo de reservas activas";
+    public static final String USUARIO_NO_AUTORIZADO = "El usuario no está autorizado para realizar esta acción";
+    public static final String RESERVA_YA_CANCELADA = "La reserva ya ha sido cancelada";
+    public static final String NO_CANCELAR_RESERVAS_PASADAS = "No se pueden cancelar reservas pasadas";
+    public static final String SOLO_RESERVAS_CONFIRMADAS = "Solo las reservas confirmadas pueden ser marcadas como asistidas";
+    public static final String EQUIPAMIENTO_NO_DISPONIBLE = "Ninguno de los equipos solicitados está disponible";
+    public static final String NO_EXISTE_EQUIPAMIENTO = "El equipamiento solicitado no existe";
+    
     /**
      * Constructor of the class.
      * @param message The message of the exception.
