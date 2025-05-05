@@ -55,7 +55,7 @@ public interface ReportService {
      * @param endDate End date
      * @return Map of routine IDs to usage counts
      */
-    Map<UUID, Integer> getRoutineUsageStatistics(LocalDate startDate, LocalDate endDate);
+    // Map<UUID, Integer> getRoutineUsageStatistics(LocalDate startDate, LocalDate endDate);
     
     /**
      * Gets progress statistics for a user
@@ -63,7 +63,7 @@ public interface ReportService {
      * @param months Number of months to analyze
      * @return Map of statistics
      */
-    Map<String, Object> getUserProgressStatistics(UUID userId, int months);
+    // Map<String, Object> getUserProgressStatistics(UUID userId, int months);
     
     /**
      * Gets gym capacity utilization
