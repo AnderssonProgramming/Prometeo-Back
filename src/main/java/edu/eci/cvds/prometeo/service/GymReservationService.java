@@ -1,5 +1,6 @@
 package edu.eci.cvds.prometeo.service;
 
+import edu.eci.cvds.prometeo.dto.ReservationDTO;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
@@ -90,4 +91,10 @@ public interface GymReservationService {
      * @return true if successfully recorded
      */
     boolean recordAttendance(UUID reservationId, boolean attended, UUID trainerId);
+
+    ReservationDTO create(ReservationDTO dto);
+    List<ReservationDTO> getByUserId(UUID userId);
+    Optional<ReservationDTO> getById(UUID id);
+    void delete(UUID id);
+    Object getAvailability(LocalDate date, LocalTime time);
 }

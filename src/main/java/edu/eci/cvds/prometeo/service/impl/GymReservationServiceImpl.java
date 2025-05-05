@@ -1,5 +1,7 @@
 package edu.eci.cvds.prometeo.service.impl;
 
+import edu.eci.cvds.prometeo.dto.ReservationDTO;
+import edu.eci.cvds.prometeo.PrometeoExceptions;
 import edu.eci.cvds.prometeo.model.Reservation;
 import edu.eci.cvds.prometeo.model.GymSession;
 import edu.eci.cvds.prometeo.model.User;
@@ -11,7 +13,6 @@ import edu.eci.cvds.prometeo.repository.EquipmentRepository;
 import edu.eci.cvds.prometeo.service.GymReservationService;
 import edu.eci.cvds.prometeo.service.NotificationService;
 import edu.eci.cvds.prometeo.model.enums.ReservationStatus;
-import edu.eci.cvds.prometeo.PrometeoExceptions;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -382,5 +383,37 @@ public class GymReservationServiceImpl implements GymReservationService {
                     return result;
                 })
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public ReservationDTO create(ReservationDTO dto) {
+        // Implementa la lógica para crear una reserva
+        // Convertir DTO a entidad, guardar y devolver DTO actualizado
+        return dto; // Esto es solo un placeholder
+    }
+
+    @Override
+    public List<ReservationDTO> getByUserId(UUID userId) {
+        // Implementa la lógica para obtener las reservas de un usuario
+        return List.of(); // Placeholder
+    }
+
+    @Override
+    public Optional<ReservationDTO> getById(UUID id) {
+        // Implementa la lógica para obtener una reserva por ID
+        return Optional.empty(); // Placeholder
+    }
+
+    @Override
+    @Transactional
+    public void delete(UUID id) {
+        // Implementa la lógica para eliminar/cancelar una reserva
+    }
+
+    @Override
+    public Object getAvailability(LocalDate date, LocalTime time) {
+        // Implementa la lógica para consultar disponibilidad
+        return new Object(); // Placeholder
     }
 }
