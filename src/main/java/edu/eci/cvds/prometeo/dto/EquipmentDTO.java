@@ -55,4 +55,8 @@ public class EquipmentDTO {
     private String primaryMuscleGroup;
     
     private String secondaryMuscleGroups;
+
+    public void setId(UUID id) {
+        this.id = id;
+    }
 }

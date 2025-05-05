@@ -9,6 +9,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -24,7 +26,8 @@ import java.util.UUID;
 @Tag(name = "Equipment", description = "Gestión y consulta de equipos")
 public class EquipmentController {
 
-    private final EquipmentService equipmentService;
+    @Autowired
+    private EquipmentService equipmentService;
 
     @Operation(summary = "Listar todos los equipos")
     @ApiResponse(responseCode = "200", description = "Equipos listados")
@@ -88,7 +91,7 @@ public class EquipmentController {
     })
     @PutMapping("/{id}")
     public ResponseEntity<EquipmentDTO> update(
-            @PathVariable UUID id, 
+            @PathVariable UUID id,
             @Valid @RequestBody EquipmentDTO equipmentDTO) {
         try {
             if (!equipmentService.exists(id)) {
