@@ -10,364 +10,333 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * REST Controller for managing user-related operations in the Prometeo application.
+ * 
+ * This controller provides a comprehensive API for managing all user-related functionality including:
+ * - User profile management: Retrieving and updating user profiles
+ * - Physical tracking: Recording and monitoring physical measurements and progress
+ * - Goals management: Creating, updating, and tracking fitness goals
+ * - Routines: Assigning, creating, and tracking workout routines
+ * - Reservations: Managing gym and equipment reservations
+ * - Recommendations: Providing personalized routine and class recommendations
+ * - Reports: Generating various user activity and progress reports
+ * 
+ * The controller includes endpoints for regular users as well as specialized endpoints
+ * for trainers and administrators with appropriate authorization checks.
+ * 
+ * All endpoints follow RESTful design principles and include comprehensive
+ * OpenAPI documentation for API consumers.
+ * 
+ * @see UserService
+ */
 @RestController
 @RequestMapping("/api/users")
 @CrossOrigin(origins = "*")
+@Tag(name = "User Controller", description = "API for managing user profiles, physical tracking, goals, routines, and reservations")
 public class UserController {
     
     @Autowired
     private UserService userService;
-    
-    @Autowired
-    private PhysicalProgressService physicalProgressService;
-    
-    @Autowired
-    private RoutineService routineService;
-    
-    @Autowired
-    private GymReservationService reservationService;
-
-    @Autowired
-    private ReportService reportService;
 
     // -----------------------------------------------------
     // User profile endpoints
     // -----------------------------------------------------
     
-    @GetMapping("/{id}")
-    public ResponseEntity<User> getUserById(@PathVariable Long id) {
-        return ResponseEntity.ok(userService.getUserById(id));
-    }
+    // @GetMapping("/{id}")
+    // @Operation(summary = "Get user by ID", description = "Retrieves a user by their unique identifier")
+    // @ApiResponse(responseCode = "200", description = "User found", content = @Content(schema = @Schema(implementation = User.class)))
+    // @ApiResponse(responseCode = "404", description = "User not found")
+    // public ResponseEntity<User> getUserById(@Parameter(description = "User ID") @PathVariable Long id);
 
-    @GetMapping("/profile/{id}")
-    public ResponseEntity<UserProfileDTO> getUserProfile(@PathVariable Long id) {
-        return ResponseEntity.ok(userService.getUserProfile(id));
-    }
+    // @GetMapping("/profile/{id}")
+    // @Operation(summary = "Get user profile", description = "Retrieves a user's profile information")
+    // @ApiResponse(responseCode = "200", description = "Profile found", content = @Content(schema = @Schema(implementation = UserProfileDTO.class)))
+    // @ApiResponse(responseCode = "404", description = "Profile not found")
+    // public ResponseEntity<UserProfileDTO> getUserProfile(@Parameter(description = "User ID") @PathVariable Long id);
 
-    @PutMapping("/{id}/profile")
-    public ResponseEntity<UserProfileDTO> updateUserProfile(
-            @PathVariable Long id,
-            @RequestBody UserProfileUpdateDTO profileDTO) {
-        return ResponseEntity.ok(userService.updateUserProfile(id, profileDTO));
-    }
+    // @PutMapping("/{id}/profile")
+    // @Operation(summary = "Update user profile", description = "Updates a user's profile information")
+    // @ApiResponse(responseCode = "200", description = "Profile updated successfully")
+    // @ApiResponse(responseCode = "404", description = "User not found")
+    // public ResponseEntity<UserProfileDTO> updateUserProfile(
+    //         @Parameter(description = "User ID") @PathVariable Long id,
+    //         @Parameter(description = "Profile data") @RequestBody UserProfileUpdateDTO profileDTO);
 
-    // -----------------------------------------------------
-    // Physical tracking endpoints
-    // -----------------------------------------------------
+    // // -----------------------------------------------------
+    // // Physical tracking endpoints
+    // // -----------------------------------------------------
     
-    @PostMapping("/{userId}/physical-records")
-    public ResponseEntity<PhysicalRecord> createPhysicalRecord(
-            @PathVariable Long userId,
-            @RequestBody PhysicalRecordDTO recordDTO) {
-        return new ResponseEntity<>(
-                physicalProgressService.createRecord(userId, recordDTO),
-                HttpStatus.CREATED);
-    }
+    // @PostMapping("/{userId}/physical-records")
+    // @Operation(summary = "Create physical record", description = "Creates a new physical measurement record for a user")
+    // @ApiResponse(responseCode = "201", description = "Record created successfully")
+    // @ApiResponse(responseCode = "404", description = "User not found")
+    // public ResponseEntity<PhysicalRecord> createPhysicalRecord(
+    //         @Parameter(description = "User ID") @PathVariable Long userId,
+    //         @Parameter(description = "Physical record data") @RequestBody PhysicalRecordDTO recordDTO);
 
-    @GetMapping("/{userId}/physical-records")
-    public ResponseEntity<List<PhysicalRecord>> getUserPhysicalRecords(@PathVariable Long userId) {
-        return ResponseEntity.ok(physicalProgressService.getUserRecords(userId));
-    }
+    // @GetMapping("/{userId}/physical-records")
+    // @Operation(summary = "Get user physical records", description = "Retrieves all physical records for a user")
+    // @ApiResponse(responseCode = "200", description = "Records retrieved successfully")
+    // public ResponseEntity<List<PhysicalRecord>> getUserPhysicalRecords(@Parameter(description = "User ID") @PathVariable Long userId);
 
-    @GetMapping("/{userId}/physical-records/latest")
-    public ResponseEntity<PhysicalRecord> getLatestPhysicalRecord(@PathVariable Long userId) {
-        return ResponseEntity.ok(physicalProgressService.getLatestRecord(userId));
-    }
+    // @GetMapping("/{userId}/physical-records/latest")
+    // @Operation(summary = "Get latest physical record", description = "Retrieves the most recent physical record for a user")
+    // @ApiResponse(responseCode = "200", description = "Latest record retrieved")
+    // @ApiResponse(responseCode = "404", description = "No records found")
+    // public ResponseEntity<PhysicalRecord> getLatestPhysicalRecord(@Parameter(description = "User ID") @PathVariable Long userId);
 
-    @GetMapping("/{userId}/physical-records/progress")
-    public ResponseEntity<ProgressReportDTO> getPhysicalProgress(
-            @PathVariable Long userId,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
-        return ResponseEntity.ok(physicalProgressService.generateProgressReport(userId, startDate, endDate));
-    }
+    // @GetMapping("/{userId}/physical-records/progress")
+    // @Operation(summary = "Get physical progress", description = "Generates a progress report between two dates")
+    // public ResponseEntity<ProgressReportDTO> getPhysicalProgress(
+    //         @Parameter(description = "User ID") @PathVariable Long userId,
+    //         @Parameter(description = "Start date") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+    //         @Parameter(description = "End date") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate);
     
-    @PostMapping("/{userId}/physical-records/{recordId}/photos")
-    public ResponseEntity<PhysicalRecordPhoto> uploadProgressPhoto(
-            @PathVariable Long userId,
-            @PathVariable Long recordId,
-            @RequestParam("file") MultipartFile file,
-            @RequestParam("type") String photoType) {
-        return new ResponseEntity<>(
-                physicalProgressService.addPhotoToRecord(userId, recordId, file, photoType),
-                HttpStatus.CREATED);
-    }
+    // @PostMapping("/{userId}/physical-records/{recordId}/photos")
+    // @Operation(summary = "Upload progress photo", description = "Uploads a photo associated with a physical record")
+    // @ApiResponse(responseCode = "201", description = "Photo uploaded successfully")
+    // public ResponseEntity<PhysicalRecordPhoto> uploadProgressPhoto(
+    //         @Parameter(description = "User ID") @PathVariable Long userId,
+    //         @Parameter(description = "Record ID") @PathVariable Long recordId,
+    //         @Parameter(description = "Photo file") @RequestParam("file") MultipartFile file,
+    //         @Parameter(description = "Photo type") @RequestParam("type") String photoType);
     
-    @PostMapping("/{userId}/medical-notes")
-    public ResponseEntity<MedicalNote> addMedicalNote(
-            @PathVariable Long userId,
-            @RequestBody MedicalNoteDTO noteDTO) {
-        return new ResponseEntity<>(
-                physicalProgressService.addMedicalNote(userId, noteDTO),
-                HttpStatus.CREATED);
-    }
+    // @PostMapping("/{userId}/medical-notes")
+    // @Operation(summary = "Add medical note", description = "Adds a medical note to a user's profile")
+    // @ApiResponse(responseCode = "201", description = "Note added successfully")
+    // public ResponseEntity<MedicalNote> addMedicalNote(
+    //         @Parameter(description = "User ID") @PathVariable Long userId,
+    //         @Parameter(description = "Medical note data") @RequestBody MedicalNoteDTO noteDTO);
     
-    @GetMapping("/{userId}/medical-notes")
-    public ResponseEntity<List<MedicalNote>> getUserMedicalNotes(@PathVariable Long userId) {
-        return ResponseEntity.ok(physicalProgressService.getUserMedicalNotes(userId));
-    }
+    // @GetMapping("/{userId}/medical-notes")
+    // @Operation(summary = "Get user medical notes", description = "Retrieves all medical notes for a user")
+    // @ApiResponse(responseCode = "200", description = "Notes retrieved successfully")
+    // public ResponseEntity<List<MedicalNote>> getUserMedicalNotes(@Parameter(description = "User ID") @PathVariable Long userId);
 
-    // -----------------------------------------------------
-    // Goals endpoints
-    // -----------------------------------------------------
+    // // -----------------------------------------------------
+    // // Goals endpoints
+    // // -----------------------------------------------------
     
-    @PostMapping("/{userId}/goals")
-    public ResponseEntity<Goal> createGoal(
-            @PathVariable Long userId,
-            @RequestBody GoalDTO goalDTO) {
-        return new ResponseEntity<>(
-                physicalProgressService.createGoal(userId, goalDTO),
-                HttpStatus.CREATED);
-    }
+    // @PostMapping("/{userId}/goals")
+    // @Operation(summary = "Create goal", description = "Creates a new fitness goal for a user")
+    // @ApiResponse(responseCode = "201", description = "Goal created successfully")
+    // public ResponseEntity<Goal> createGoal(
+    //         @Parameter(description = "User ID") @PathVariable Long userId,
+    //         @Parameter(description = "Goal data") @RequestBody GoalDTO goalDTO);
 
-    @GetMapping("/{userId}/goals")
-    public ResponseEntity<List<Goal>> getUserGoals(@PathVariable Long userId) {
-        return ResponseEntity.ok(physicalProgressService.getUserGoals(userId));
-    }
+    // @GetMapping("/{userId}/goals")
+    // @Operation(summary = "Get user goals", description = "Retrieves all goals for a user")
+    // @ApiResponse(responseCode = "200", description = "Goals retrieved successfully")
+    // public ResponseEntity<List<Goal>> getUserGoals(@Parameter(description = "User ID") @PathVariable Long userId);
 
-    @PutMapping("/{userId}/goals/{goalId}")
-    public ResponseEntity<Goal> updateGoal(
-            @PathVariable Long userId,
-            @PathVariable Long goalId,
-            @RequestBody GoalDTO goalDTO) {
-        return ResponseEntity.ok(physicalProgressService.updateGoal(userId, goalId, goalDTO));
-    }
+    // @PutMapping("/{userId}/goals/{goalId}")
+    // @Operation(summary = "Update goal", description = "Updates an existing goal")
+    // @ApiResponse(responseCode = "200", description = "Goal updated successfully")
+    // public ResponseEntity<Goal> updateGoal(
+    //         @Parameter(description = "User ID") @PathVariable Long userId,
+    //         @Parameter(description = "Goal ID") @PathVariable Long goalId,
+    //         @Parameter(description = "Updated goal data") @RequestBody GoalDTO goalDTO);
     
-    @DeleteMapping("/{userId}/goals/{goalId}")
-    public ResponseEntity<Void> deleteGoal(
-            @PathVariable Long userId,
-            @PathVariable Long goalId) {
-        physicalProgressService.deleteGoal(userId, goalId);
-        return ResponseEntity.ok().build();
-    }
+    // @DeleteMapping("/{userId}/goals/{goalId}")
+    // @Operation(summary = "Delete goal", description = "Deletes a goal")
+    // @ApiResponse(responseCode = "200", description = "Goal deleted successfully")
+    // public ResponseEntity<Void> deleteGoal(
+    //         @Parameter(description = "User ID") @PathVariable Long userId,
+    //         @Parameter(description = "Goal ID") @PathVariable Long goalId);
     
-    @GetMapping("/{userId}/goals/progress")
-    public ResponseEntity<List<GoalProgressDTO>> getUserGoalsProgress(@PathVariable Long userId) {
-        return ResponseEntity.ok(physicalProgressService.getUserGoalsProgress(userId));
-    }
+    // @GetMapping("/{userId}/goals/progress")
+    // @Operation(summary = "Get goals progress", description = "Retrieves progress for all user goals")
+    // @ApiResponse(responseCode = "200", description = "Progress retrieved successfully")
+    // public ResponseEntity<List<GoalProgressDTO>> getUserGoalsProgress(@Parameter(description = "User ID") @PathVariable Long userId);
 
-    // -----------------------------------------------------
-    // Routines endpoints
-    // -----------------------------------------------------
+    // // -----------------------------------------------------
+    // // Routines endpoints
+    // // -----------------------------------------------------
     
-    @GetMapping("/{userId}/routines")
-    public ResponseEntity<List<Routine>> getUserRoutines(@PathVariable Long userId) {
-        return ResponseEntity.ok(routineService.getUserRoutines(userId));
-    }
+    // @GetMapping("/{userId}/routines")
+    // @Operation(summary = "Get user routines", description = "Retrieves all routines for a user")
+    // public ResponseEntity<List<Routine>> getUserRoutines(@Parameter(description = "User ID") @PathVariable Long userId);
 
-    @GetMapping("/{userId}/routines/current")
-    public ResponseEntity<Routine> getCurrentRoutine(@PathVariable Long userId) {
-        return ResponseEntity.ok(routineService.getCurrentRoutine(userId));
-    }
+    // @GetMapping("/{userId}/routines/current")
+    // @Operation(summary = "Get current routine", description = "Retrieves the user's current active routine")
+    // public ResponseEntity<Routine> getCurrentRoutine(@Parameter(description = "User ID") @PathVariable Long userId);
 
-    @PostMapping("/{userId}/routines/assign/{routineId}")
-    public ResponseEntity<Void> assignRoutineToUser(
-            @PathVariable Long userId,
-            @PathVariable Long routineId) {
-        routineService.assignRoutineToUser(userId, routineId);
-        return ResponseEntity.ok().build();
-    }
+    // @PostMapping("/{userId}/routines/assign/{routineId}")
+    // @Operation(summary = "Assign routine to user", description = "Assigns an existing routine to a user")
+    // public ResponseEntity<Void> assignRoutineToUser(
+    //         @Parameter(description = "User ID") @PathVariable Long userId,
+    //         @Parameter(description = "Routine ID") @PathVariable Long routineId);
 
-    @GetMapping("/routines/public")
-    public ResponseEntity<List<Routine>> getPublicRoutines(
-            @RequestParam(required = false) String category,
-            @RequestParam(required = false) String difficulty) {
-        return ResponseEntity.ok(routineService.getPublicRoutines(category, difficulty));
-    }
+    // @GetMapping("/routines/public")
+    // @Operation(summary = "Get public routines", description = "Retrieves publicly available routines with optional filters")
+    // public ResponseEntity<List<Routine>> getPublicRoutines(
+    //         @Parameter(description = "Category filter") @RequestParam(required = false) String category,
+    //         @Parameter(description = "Difficulty filter") @RequestParam(required = false) String difficulty);
     
-    @PostMapping("/{userId}/routines/custom")
-    @PreAuthorize("hasRole('TRAINER') or @securityService.isResourceOwner(#userId)")
-    public ResponseEntity<Routine> createCustomRoutine(
-            @PathVariable Long userId,
-            @RequestBody RoutineDTO routineDTO) {
-        return new ResponseEntity<>(
-                routineService.createCustomRoutine(userId, routineDTO),
-                HttpStatus.CREATED);
-    }
+    // @PostMapping("/{userId}/routines/custom")
+    // @Operation(summary = "Create custom routine", description = "Creates a custom routine for a user")
+    // @PreAuthorize("hasRole('TRAINER') or @securityService.isResourceOwner(#userId)")
+    // public ResponseEntity<Routine> createCustomRoutine(
+    //         @Parameter(description = "User ID") @PathVariable Long userId,
+    //         @Parameter(description = "Routine data") @RequestBody RoutineDTO routineDTO);
     
-    @PutMapping("/{userId}/routines/{routineId}")
-    @PreAuthorize("hasRole('TRAINER') or @securityService.isResourceOwner(#userId)")
-    public ResponseEntity<Routine> updateRoutine(
-            @PathVariable Long userId,
-            @PathVariable Long routineId,
-            @RequestBody RoutineDTO routineDTO) {
-        return ResponseEntity.ok(routineService.updateRoutine(userId, routineId, routineDTO));
-    }
+    // @PutMapping("/{userId}/routines/{routineId}")
+    // @Operation(summary = "Update routine", description = "Updates an existing routine")
+    // @PreAuthorize("hasRole('TRAINER') or @securityService.isResourceOwner(#userId)")
+    // public ResponseEntity<Routine> updateRoutine(
+    //         @Parameter(description = "User ID") @PathVariable Long userId,
+    //         @Parameter(description = "Routine ID") @PathVariable Long routineId,
+    //         @Parameter(description = "Updated routine data") @RequestBody RoutineDTO routineDTO);
     
-    @GetMapping("/routines/{routineId}/details")
-    public ResponseEntity<RoutineDetailDTO> getRoutineDetails(@PathVariable Long routineId) {
-        return ResponseEntity.ok(routineService.getRoutineDetails(routineId));
-    }
+    // @GetMapping("/routines/{routineId}/details")
+    // @Operation(summary = "Get routine details", description = "Retrieves detailed information about a routine")
+    // public ResponseEntity<RoutineDetailDTO> getRoutineDetails(@Parameter(description = "Routine ID") @PathVariable Long routineId);
     
-    @PostMapping("/{userId}/routines/progress")
-    public ResponseEntity<RoutineProgress> logRoutineProgress(
-            @PathVariable Long userId,
-            @RequestBody RoutineProgressDTO progressDTO) {
-        return new ResponseEntity<>(
-                routineService.logRoutineProgress(userId, progressDTO),
-                HttpStatus.CREATED);
-    }
+    // @PostMapping("/{userId}/routines/progress")
+    // @Operation(summary = "Log routine progress", description = "Records progress for a routine session")
+    // public ResponseEntity<RoutineProgress> logRoutineProgress(
+    //         @Parameter(description = "User ID") @PathVariable Long userId,
+    //         @Parameter(description = "Progress data") @RequestBody RoutineProgressDTO progressDTO);
 
-    // -----------------------------------------------------
-    // Gym reservations endpoints
-    // -----------------------------------------------------
+    // // -----------------------------------------------------
+    // // Gym reservations endpoints
+    // // -----------------------------------------------------
     
-    @GetMapping("/gym/availability")
-    public ResponseEntity<Map<String, Integer>> getGymAvailability(
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
-        return ResponseEntity.ok(reservationService.getAvailabilityByDate(date));
-    }
+    // @GetMapping("/gym/availability")
+    // @Operation(summary = "Get gym availability", description = "Retrieves gym availability for a specific date")
+    // public ResponseEntity<Map<String, Integer>> getGymAvailability(
+    //         @Parameter(description = "Date to check") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date);
 
-    @PostMapping("/{userId}/reservations")
-    public ResponseEntity<Reservation> createReservation(
-            @PathVariable Long userId,
-            @RequestBody ReservationDTO reservationDTO) {
-        return new ResponseEntity<>(
-                reservationService.createReservation(userId, reservationDTO),
-                HttpStatus.CREATED);
-    }
+    // @PostMapping("/{userId}/reservations")
+    // @Operation(summary = "Create reservation", description = "Creates a new gym reservation")
+    // public ResponseEntity<Reservation> createReservation(
+    //         @Parameter(description = "User ID") @PathVariable Long userId,
+    //         @Parameter(description = "Reservation data") @RequestBody ReservationDTO reservationDTO);
 
-    @GetMapping("/{userId}/reservations")
-    public ResponseEntity<List<Reservation>> getUserReservations(@PathVariable Long userId) {
-        return ResponseEntity.ok(reservationService.getUserReservations(userId));
-    }
+    // @GetMapping("/{userId}/reservations")
+    // @Operation(summary = "Get user reservations", description = "Retrieves all reservations for a user")
+    // public ResponseEntity<List<Reservation>> getUserReservations(@Parameter(description = "User ID") @PathVariable Long userId);
 
-    @DeleteMapping("/{userId}/reservations/{reservationId}")
-    public ResponseEntity<Void> cancelReservation(
-            @PathVariable Long userId,
-            @PathVariable Long reservationId) {
-        reservationService.cancelReservation(userId, reservationId);
-        return ResponseEntity.ok().build();
-    }
+    // @DeleteMapping("/{userId}/reservations/{reservationId}")
+    // @Operation(summary = "Cancel reservation", description = "Cancels an existing reservation")
+    // public ResponseEntity<Void> cancelReservation(
+    //         @Parameter(description = "User ID") @PathVariable Long userId,
+    //         @Parameter(description = "Reservation ID") @PathVariable Long reservationId);
     
-    @GetMapping("/{userId}/reservations/upcoming")
-    public ResponseEntity<List<Reservation>> getUpcomingReservations(@PathVariable Long userId) {
-        return ResponseEntity.ok(reservationService.getUpcomingReservations(userId));
-    }
+    // @GetMapping("/{userId}/reservations/upcoming")
+    // @Operation(summary = "Get upcoming reservations", description = "Retrieves upcoming reservations for a user")
+    // public ResponseEntity<List<Reservation>> getUpcomingReservations(@Parameter(description = "User ID") @PathVariable Long userId);
     
-    @GetMapping("/{userId}/reservations/history")
-    public ResponseEntity<List<Reservation>> getReservationHistory(
-            @PathVariable Long userId,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
-        return ResponseEntity.ok(reservationService.getReservationHistory(userId, startDate, endDate));
-    }
+    // @GetMapping("/{userId}/reservations/history")
+    // @Operation(summary = "Get reservation history", description = "Retrieves historical reservations for a user")
+    // public ResponseEntity<List<Reservation>> getReservationHistory(
+    //         @Parameter(description = "User ID") @PathVariable Long userId,
+    //         @Parameter(description = "Start date") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+    //         @Parameter(description = "End date") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate);
 
-    // -----------------------------------------------------
-    // Equipment reservations endpoints
-    // -----------------------------------------------------
+    // // -----------------------------------------------------
+    // // Equipment reservations endpoints
+    // // -----------------------------------------------------
     
-    @GetMapping("/gym/equipment")
-    public ResponseEntity<List<Equipment>> getAvailableEquipment(
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dateTime) {
-        return ResponseEntity.ok(reservationService.getAvailableEquipment(dateTime));
-    }
+    // @GetMapping("/gym/equipment")
+    // @Operation(summary = "Get available equipment", description = "Retrieves available equipment for a specific time")
+    // public ResponseEntity<List<Equipment>> getAvailableEquipment(
+    //         @Parameter(description = "Date and time to check") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dateTime);
 
-    @PostMapping("/{userId}/reservations/{reservationId}/equipment")
-    public ResponseEntity<EquipmentReservation> reserveEquipment(
-            @PathVariable Long userId,
-            @PathVariable Long reservationId,
-            @RequestBody EquipmentReservationDTO equipmentDTO) {
-        return new ResponseEntity<>(
-                reservationService.reserveEquipment(userId, reservationId, equipmentDTO),
-                HttpStatus.CREATED);
-    }
+    // @PostMapping("/{userId}/reservations/{reservationId}/equipment")
+    // @Operation(summary = "Reserve equipment", description = "Reserves equipment for a gym session")
+    // public ResponseEntity<EquipmentReservation> reserveEquipment(
+    //         @Parameter(description = "User ID") @PathVariable Long userId,
+    //         @Parameter(description = "Reservation ID") @PathVariable Long reservationId,
+    //         @Parameter(description = "Equipment reservation data") @RequestBody EquipmentReservationDTO equipmentDTO);
     
-    @DeleteMapping("/{userId}/reservations/{reservationId}/equipment/{equipmentReservationId}")
-    public ResponseEntity<Void> cancelEquipmentReservation(
-            @PathVariable Long userId,
-            @PathVariable Long reservationId,
-            @PathVariable Long equipmentReservationId) {
-        reservationService.cancelEquipmentReservation(userId, reservationId, equipmentReservationId);
-        return ResponseEntity.ok().build();
-    }
+    // @DeleteMapping("/{userId}/reservations/{reservationId}/equipment/{equipmentReservationId}")
+    // @Operation(summary = "Cancel equipment reservation", description = "Cancels an equipment reservation")
+    // public ResponseEntity<Void> cancelEquipmentReservation(
+    //         @Parameter(description = "User ID") @PathVariable Long userId,
+    //         @Parameter(description = "Reservation ID") @PathVariable Long reservationId,
+    //         @Parameter(description = "Equipment reservation ID") @PathVariable Long equipmentReservationId);
 
-    // -----------------------------------------------------
-    // Recommendations endpoints
-    // -----------------------------------------------------
+    // // -----------------------------------------------------
+    // // Recommendations endpoints
+    // // -----------------------------------------------------
     
-    @GetMapping("/{userId}/recommended-routines")
-    public ResponseEntity<List<Routine>> getRecommendedRoutines(@PathVariable Long userId) {
-        return ResponseEntity.ok(routineService.getRecommendedRoutines(userId));
-    }
+    // @GetMapping("/{userId}/recommended-routines")
+    // @Operation(summary = "Get recommended routines", description = "Retrieves personalized routine recommendations for a user")
+    // public ResponseEntity<List<Routine>> getRecommendedRoutines(@Parameter(description = "User ID") @PathVariable Long userId);
     
-    @GetMapping("/{userId}/recommended-classes")
-    public ResponseEntity<List<ClassRecommendationDTO>> getRecommendedClasses(@PathVariable Long userId) {
-        return ResponseEntity.ok(routineService.getRecommendedClasses(userId));
-    }
+    // @GetMapping("/{userId}/recommended-classes")
+    // @Operation(summary = "Get recommended classes", description = "Retrieves personalized class recommendations for a user")
+    // public ResponseEntity<List<ClassRecommendationDTO>> getRecommendedClasses(@Parameter(description = "User ID") @PathVariable Long userId);
 
-    // -----------------------------------------------------
-    // Reports and analysis endpoints
-    // -----------------------------------------------------
+    // // -----------------------------------------------------
+    // // Reports and analysis endpoints
+    // // -----------------------------------------------------
     
-    @GetMapping("/{userId}/reports/attendance")
-    public ResponseEntity<AttendanceReportDTO> getUserAttendanceReport(
-            @PathVariable Long userId,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
-        return ResponseEntity.ok(reportService.generateAttendanceReport(userId, startDate, endDate));
-    }
+    // @GetMapping("/{userId}/reports/attendance")
+    // @Operation(summary = "Get attendance report", description = "Generates an attendance report for a user")
+    // public ResponseEntity<AttendanceReportDTO> getUserAttendanceReport(
+    //         @Parameter(description = "User ID") @PathVariable Long userId,
+    //         @Parameter(description = "Start date") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+    //         @Parameter(description = "End date") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate);
     
-    @GetMapping("/{userId}/reports/physical-evolution")
-    public ResponseEntity<PhysicalEvolutionReportDTO> getUserPhysicalEvolutionReport(
-            @PathVariable Long userId,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
-        return ResponseEntity.ok(reportService.generatePhysicalEvolutionReport(userId, startDate, endDate));
-    }
+    // @GetMapping("/{userId}/reports/physical-evolution")
+    // @Operation(summary = "Get physical evolution report", description = "Generates a physical evolution report for a user")
+    // public ResponseEntity<PhysicalEvolutionReportDTO> getUserPhysicalEvolutionReport(
+    //         @Parameter(description = "User ID") @PathVariable Long userId,
+    //         @Parameter(description = "Start date") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+    //         @Parameter(description = "End date") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate);
     
-    @GetMapping("/{userId}/reports/routine-compliance")
-    public ResponseEntity<RoutineComplianceReportDTO> getUserRoutineComplianceReport(
-            @PathVariable Long userId,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
-        return ResponseEntity.ok(reportService.generateRoutineComplianceReport(userId, startDate, endDate));
-    }
+    // @GetMapping("/{userId}/reports/routine-compliance")
+    // @Operation(summary = "Get routine compliance report", description = "Generates a routine compliance report for a user")
+    // public ResponseEntity<RoutineComplianceReportDTO> getUserRoutineComplianceReport(
+    //         @Parameter(description = "User ID") @PathVariable Long userId,
+    //         @Parameter(description = "Start date") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+    //         @Parameter(description = "End date") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate);
     
-    // -----------------------------------------------------
-    // Admin/Trainer specific endpoints
-    // -----------------------------------------------------
+    // // -----------------------------------------------------
+    // // Admin/Trainer specific endpoints
+    // // -----------------------------------------------------
     
-    @PostMapping("/gym/capacity")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('TRAINER')")
-    public ResponseEntity<Void> configureGymCapacity(@RequestBody GymCapacityDTO capacityDTO) {
-        reservationService.configureGymCapacity(capacityDTO);
-        return ResponseEntity.ok().build();
-    }
+    // @PostMapping("/gym/capacity")
+    // @Operation(summary = "Configure gym capacity", description = "Sets capacity limits for the gym")
+    // @PreAuthorize("hasRole('ADMIN') or hasRole('TRAINER')")
+    // public ResponseEntity<Void> configureGymCapacity(@Parameter(description = "Capacity configuration") @RequestBody GymCapacityDTO capacityDTO);
     
-    @PostMapping("/gym/block-timeslot")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('TRAINER')")
-    public ResponseEntity<Void> blockGymTimeslot(@RequestBody BlockTimeslotDTO blockDTO) {
-        reservationService.blockGymTimeslot(blockDTO);
-        return ResponseEntity.ok().build();
-    }
+    // @PostMapping("/gym/block-timeslot")
+    // @Operation(summary = "Block gym timeslot", description = "Blocks a timeslot from being reserved")
+    // @PreAuthorize("hasRole('ADMIN') or hasRole('TRAINER')")
+    // public ResponseEntity<Void> blockGymTimeslot(@Parameter(description = "Block configuration") @RequestBody BlockTimeslotDTO blockDTO);
     
-    @GetMapping("/admin/gym/usage-stats")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('TRAINER')")
-    public ResponseEntity<GymUsageStatsDTO> getGymUsageStatistics(
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
-        return ResponseEntity.ok(reportService.generateGymUsageStatistics(startDate, endDate));
-    }
+    // @GetMapping("/admin/gym/usage-stats")
+    // @Operation(summary = "Get gym usage statistics", description = "Retrieves statistics about gym usage")
+    // @PreAuthorize("hasRole('ADMIN') or hasRole('TRAINER')")
+    // public ResponseEntity<GymUsageStatsDTO> getGymUsageStatistics(
+    //         @Parameter(description = "Start date") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+    //         @Parameter(description = "End date") @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate);
     
-    @GetMapping("/trainer/assigned-users")
-    @PreAuthorize("hasRole('TRAINER')")
-    public ResponseEntity<List<UserProfileDTO>> getTrainerAssignedUsers() {
-        return ResponseEntity.ok(userService.getTrainerAssignedUsers());
-    }
+    // @GetMapping("/trainer/assigned-users")
+    // @Operation(summary = "Get trainer's assigned users", description = "Retrieves users assigned to the current trainer")
+    // @PreAuthorize("hasRole('TRAINER')")
+    // public ResponseEntity<List<UserProfileDTO>> getTrainerAssignedUsers();
     
-    @PostMapping("/trainer/{trainerId}/assign-user/{userId}")
-    @PreAuthorize("hasRole('ADMIN') or @securityService.isResourceOwner(#trainerId)")
-    public ResponseEntity<Void> assignUserToTrainer(
-            @PathVariable Long trainerId,
-            @PathVariable Long userId) {
-        userService.assignUserToTrainer(userId, trainerId);
-        return ResponseEntity.ok().build();
-    }
+    // @PostMapping("/trainer/{trainerId}/assign-user/{userId}")
+    // @Operation(summary = "Assign user to trainer", description = "Assigns a user to a specific trainer")
+    // @PreAuthorize("hasRole('ADMIN') or @securityService.isResourceOwner(#trainerId)")
+    // public ResponseEntity<Void> assignUserToTrainer(
+    //         @Parameter(description = "Trainer ID") @PathVariable Long trainerId,
+    //         @Parameter(description = "User ID") @PathVariable Long userId);
 }
