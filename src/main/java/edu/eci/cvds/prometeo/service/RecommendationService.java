@@ -7,7 +7,6 @@ import java.time.LocalTime;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.Optional;
 
 /**
  * Service for providing personalized recommendations to users
@@ -17,11 +16,9 @@ public interface RecommendationService {
     /**
      * Recommends routines for a user based on their profile and progress
      * @param userId ID of the user
-     * @param goal Optional goal filter
-     * @param limit Maximum number of recommendations
      * @return List of recommended routines with compatibility scores
      */
-    // List<Map<Routine, Integer>> recommendRoutines(UUID userId, Optional<String> goal, int limit);
+    List<Map<Routine, Integer>> recommendRoutines(UUID userId);
 
     /**
      * Recommends optimal gym times based on user preferences and gym occupancy

@@ -7,6 +7,7 @@ import edu.eci.cvds.prometeo.repository.RoutineRepository;
 import edu.eci.cvds.prometeo.repository.UserRepository;
 import edu.eci.cvds.prometeo.repository.PhysicalProgressRepository;
 import edu.eci.cvds.prometeo.service.RecommendationService;
+import edu.eci.cvds.prometeo.huggingface.HuggingFaceClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -27,28 +28,55 @@ public class RecommendationServiceImpl implements RecommendationService {
     @Autowired
     private PhysicalProgressRepository physicalProgressRepository;
 
-    // @Override
-    // public List<Map<Routine, Integer>> recommendRoutines(UUID userId, Optional<String> goal, int limit) {
-    //     User user = userRepository.findById(userId).orElseThrow(() -> new IllegalArgumentException("User not found"));
-    //     List<Routine> routines;
-    //     if (goal.isPresent()) {
-    //         routines = routineRepository.findByGoal(goal.get());
-    //     } else {
-    //         routines = routineRepository.findAll();
-    //     }
-    //     // Simple compatibility: routines matching user's goal or profile
-    //     List<Map<Routine, Integer>> recommendations = new ArrayList<>();
-    //     for (Routine routine : routines) {
-    //         int score = calculateRoutineCompatibility(user, routine);
-    //         Map<Routine, Integer> map = new HashMap<>();
-    //         map.put(routine, score);
-    //         recommendations.add(map);
-    //     }
-    //     return recommendations.stream()
-    //             .sorted((a, b) -> b.values().iterator().next() - a.values().iterator().next())
-    //             .limit(limit)
-    //             .collect(Collectors.toList());
-    // }
+    @Autowired
+    private HuggingFaceClient huggingFaceClient;
+
+    @Override
+    public List<Map<Routine, Integer>> recommendRoutines(UUID userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        String goal = user.getProgramCode();
+        List<Routine> allRoutines = routineRepository.findAll();
+
+        StringBuilder prompt = new StringBuilder();
+        prompt.append("La meta del usuario es: ").append(goal).append(".\n");
+        prompt.append("Las rutinas disponibles son:\n");
+        for (Routine routine : allRoutines) {
+            prompt.append("- ").append(routine.getName()).append(": ").append(routine.getDescription()).append("\n");
+        }
+        prompt.append("Con base en la meta, ¿cuál rutina sería la más adecuada? Solo responde con el nombre de la rutina.");
+
+        try {
+            String response = huggingFaceClient.queryModel(prompt.toString());
+            List<String> recommendedNames = extractRoutineNames(response);
+
+            List<Map<Routine, Integer>> recommendedRoutines = new ArrayList<>();
+            for (int i = 0; i < recommendedNames.size(); i++) {
+                String name = recommendedNames.get(i).trim().toLowerCase();
+                int finalI = i;
+                allRoutines.stream()
+                        .filter(r -> r.getName().equalsIgnoreCase(name))
+                        .findFirst()
+                        .ifPresent(routine -> {
+                            Map<Routine, Integer> entry = new HashMap<>();
+                            entry.put(routine, 100 - finalI * 10);
+                            recommendedRoutines.add(entry);
+                        });
+            }
+            return recommendedRoutines;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ArrayList<>();
+        }
+    }
+
+    private List<String> extractRoutineNames(String response) {
+        return Arrays.stream(response.strip().split("\n"))
+                .filter(line -> !line.isBlank())
+                .collect(Collectors.toList());
+    }
 
     @Override
     public Map<LocalTime, Integer> recommendTimeSlots(UUID userId, LocalDate date) {
