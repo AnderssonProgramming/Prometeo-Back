@@ -15,6 +15,26 @@ import java.util.UUID;
 /**
  * Servicio central para operaciones de usuario y todas las funcionalidades relacionadas
  */
+/**
+ * Service interface for user management and related functionalities in the Prometeo system.
+ * <p>
+ * This service provides operations for:
+ * <ul>
+ *   <li>User profile management (get, update, assign)</li>
+ *   <li>Physical progress tracking and measurements</li>
+ *   <li>Fitness routine management and assignment</li>
+ *   <li>Gym reservation system operations</li>
+ *   <li>Gym equipment administration</li>
+ *   <li>Statistical reports and analysis</li>
+ * </ul>
+ * <p>
+ * The interface supports operations for both regular users and trainers,
+ * including relationship management between them. It provides a comprehensive
+ * set of methods to handle all user-related aspects of the fitness management system.
+ *
+ * @author Prometeo Team
+ * @version 1.0
+ */
 public interface UserService {
     
     // ------------- Operaciones básicas de usuario -------------
@@ -39,13 +59,13 @@ public interface UserService {
      * @param profileDTO datos de perfil a actualizar
      * @return perfil actualizado
      */
-    User updateUserProfile(Long id, User user);
+    User updateUser(Long id, User user);
     
     /**
      * Obtener lista de usuarios asignados al entrenador actual
      * @return lista de perfiles de usuario
      */
-    List<UserProfileDTO> getTrainerAssignedUsers();
+    List<User> getTrainerAssignedUsers();
     
     /**
      * Asignar un usuario a un entrenador

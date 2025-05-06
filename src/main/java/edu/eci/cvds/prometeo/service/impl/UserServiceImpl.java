@@ -1,151 +1,284 @@
 package edu.eci.cvds.prometeo.service.impl;
 
-import edu.eci.cvds.prometeo.PrometeoExceptions;
-import edu.eci.cvds.prometeo.dto.UserProfileDTO;
-import edu.eci.cvds.prometeo.dto.UserProfileUpdateDTO;
-import edu.eci.cvds.prometeo.model.User;
-import edu.eci.cvds.prometeo.model.UserTrainerAssignment;
-import edu.eci.cvds.prometeo.repository.UserRepository;
-import edu.eci.cvds.prometeo.repository.UserTrainerAssignmentRepository;
+import edu.eci.cvds.prometeo.dto.*;
+import edu.eci.cvds.prometeo.model.*;
+import edu.eci.cvds.prometeo.repository.*;
 import edu.eci.cvds.prometeo.service.UserService;
-import edu.eci.cvds.prometeo.service.SecurityService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.stream.Collectors;
+import java.time.LocalTime;
+import java.util.*;
 
+/**
+ * Implementación del servicio central de usuario que maneja todas las operaciones
+ * relacionadas con usuarios, seguimiento físico, rutinas y reservas
+ */
+/**
+ * Implementation of the UserService interface that provides comprehensive functionality
+ * for managing users in the fitness system.
+ * 
+ * This service handles multiple aspects of user management including:
+ * - Basic user operations (retrieval, updates, trainer assignment)
+ * - Physical progress tracking and measurements
+ * - Fitness routine management and assignment
+ * - Gym reservation system
+ * - Fitness equipment administration
+ * - Statistical reporting and analytics
+ * 
+ * The implementation relies on several repositories to interact with the database:
+ * - UserRepository: For core user data operations
+ * - PhysicalProgressRepository: For storing and retrieving physical measurements and progress
+ * - RoutineRepository: For managing workout routines
+ * - EquipmentRepository: For handling gym equipment information
+ * 
+ * @author Prometeo Team
+ * @version 1.0
+ */
 @Service
 public class UserServiceImpl implements UserService {
 
+    // Repositories necesarios
+    /**
+     * Repository interface for User entity operations.
+     * This field manages database interactions for user-related data,
+     * providing methods for CRUD operations and custom queries on users.
+     * It is injected as a dependency and marked as final to ensure immutability.
+     */
     private final UserRepository userRepository;
-    private final UserTrainerAssignmentRepository userTrainerAssignmentRepository;
-    private final SecurityService securityService;
+    private final PhysicalProgressRepository physicalProgressRepository;
+    private final RoutineRepository routineRepository;
+    private final EquipmentRepository equipmentRepository;
+    // Agregar otros repositorios según sea necesario
 
     @Autowired
     public UserServiceImpl(
             UserRepository userRepository,
-            UserTrainerAssignmentRepository userTrainerAssignmentRepository,
-            SecurityService securityService) {
+            PhysicalProgressRepository physicalProgressRepository,
+            RoutineRepository routineRepository,
+            EquipmentRepository equipmentRepository) {
         this.userRepository = userRepository;
-        this.userTrainerAssignmentRepository = userTrainerAssignmentRepository;
-        this.securityService = securityService;
+        this.physicalProgressRepository = physicalProgressRepository;
+        this.routineRepository = routineRepository;
+        this.equipmentRepository = equipmentRepository;
     }
+
+    // ------------- Operaciones básicas de usuario -------------
 
     @Override
     public User getUserById(Long id) {
-        return userRepository.findById(id)
-                .orElseThrow(() -> new PrometeoExceptions(PrometeoExceptions.USUARIO_NO_ENCONTRADO));
+        // TODO: Implementar este método
+        return null;
     }
 
     @Override
-    public UserProfileDTO getUserProfile(Long id) {
-        User user = getUserById(id);
-        
-        UserProfileDTO profileDTO = new UserProfileDTO();
-        profileDTO.setId(user.getId());
-        profileDTO.setName(user.getName());
-        profileDTO.setEmail(user.getEmail());
-        profileDTO.setPhoneNumber(user.getPhoneNumber());
-        profileDTO.setMembershipType(user.getMembershipType());
-        profileDTO.setRegistrationDate(user.getRegistrationDate());
-        profileDTO.setProfilePictureUrl(user.getProfilePictureUrl());
-        
-        // If it's a regular user, get their assigned trainer
-        if (!user.isTrainer() && !user.isAdmin()) {
-            userTrainerAssignmentRepository.findByUserId(id)
-                    .ifPresent(assignment -> {
-                        User trainer = userRepository.findById(assignment.getTrainerId())
-                                .orElse(null);
-                        if (trainer != null) {
-                            profileDTO.setAssignedTrainerId(trainer.getId());
-                            profileDTO.setAssignedTrainerName(trainer.getName());
-                        }
-                    });
-        }
-        
-        return profileDTO;
+    public User getUser(Long id) {
+        // TODO: Implementar este método
+        return null;
     }
 
     @Override
-    @Transactional
-    public UserProfileDTO updateUserProfile(Long id, UserProfileUpdateDTO profileDTO) {
-        User user = getUserById(id);
-        
-        // Validate current user has permission to update this profile
-        if (!securityService.isResourceOwner(id) && !securityService.hasAdminRole()) {
-            throw new PrometeoExceptions(PrometeoExceptions.USUARIO_NO_AUTORIZADO);
-        }
-        
-        // Update user fields
-        if (profileDTO.getName() != null) {
-            user.setName(profileDTO.getName());
-        }
-        
-        if (profileDTO.getPhoneNumber() != null) {
-            user.setPhoneNumber(profileDTO.getPhoneNumber());
-        }
-        
-        if (profileDTO.getProfilePictureUrl() != null) {
-            user.setProfilePictureUrl(profileDTO.getProfilePictureUrl());
-        }
-        
-        // Save updated user
-        userRepository.save(user);
-        
-        // Return updated profile
-        return getUserProfile(id);
+    public User updateUser(Long id, User user) {
+        // TODO: Implementar este método
+        return null;
     }
 
     @Override
-    public List<UserProfileDTO> getTrainerAssignedUsers() {
-        // Get current user (trainer) ID
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        User trainer = userRepository.findByEmail(username)
-                .orElseThrow(() -> new PrometeoExceptions(PrometeoExceptions.USUARIO_NO_ENCONTRADO));
-        
-        // Verify user is a trainer
-        if (!trainer.isTrainer()) {
-            throw new PrometeoExceptions(PrometeoExceptions.USUARIO_NO_ES_ENTRENADOR);
-        }
-        
-        // Get all users assigned to this trainer
-        List<UserTrainerAssignment> assignments = userTrainerAssignmentRepository.findByTrainerId(trainer.getId());
-        
-        // Convert to list of user profile DTOs
-        return assignments.stream()
-                .map(assignment -> getUserProfile(assignment.getUserId()))
-                .collect(Collectors.toList());
+    public List<User> getTrainerAssignedUsers() {
+        // TODO: Implementar este método
+        return null;
     }
 
     @Override
-    @Transactional
     public void assignUserToTrainer(Long userId, Long trainerId) {
-        // Validate user exists
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new PrometeoExceptions(PrometeoExceptions.USUARIO_NO_ENCONTRADO));
-        
-        // Validate trainer exists and is actually a trainer
-        User trainer = userRepository.findById(trainerId)
-                .orElseThrow(() -> new PrometeoExceptions(PrometeoExceptions.USUARIO_NO_ENCONTRADO));
-        
-        if (!trainer.isTrainer()) {
-            throw new PrometeoExceptions(PrometeoExceptions.USUARIO_NO_ES_ENTRENADOR);
-        }
-        
-        // Remove any existing trainer assignment for this user
-        userTrainerAssignmentRepository.findByUserId(userId)
-                .ifPresent(assignment -> userTrainerAssignmentRepository.delete(assignment));
-        
-        // Create new assignment
-        UserTrainerAssignment assignment = new UserTrainerAssignment();
-        assignment.setUserId(userId);
-        assignment.setTrainerId(trainerId);
-        assignment.setAssignmentDate(LocalDateTime.now());
-        
-        userTrainerAssignmentRepository.save(assignment);
+        // TODO: Implementar este método
+    }
+
+    // ------------- Seguimiento físico -------------
+
+    @Override
+    public PhysicalProgress recordPhysicalMeasurement(UUID userId, PhysicalProgress progress) {
+        // TODO: Implementar este método
+        return null;
+    }
+
+    @Override
+    public List<PhysicalProgress> getPhysicalMeasurementHistory(UUID userId, Optional<LocalDate> startDate, Optional<LocalDate> endDate) {
+        // TODO: Implementar este método
+        return null;
+    }
+
+    @Override
+    public Optional<PhysicalProgress> getLatestPhysicalMeasurement(UUID userId) {
+        // TODO: Implementar este método
+        return Optional.empty();
+    }
+
+    @Override
+    public PhysicalProgress updatePhysicalMeasurement(UUID progressId, BodyMeasurements measurements) {
+        // TODO: Implementar este método
+        return null;
+    }
+
+    @Override
+    public PhysicalProgress setPhysicalGoal(UUID userId, String goal) {
+        // TODO: Implementar este método
+        return null;
+    }
+
+    @Override
+    public PhysicalProgress recordMedicalObservation(UUID userId, String observation, UUID trainerId) {
+        // TODO: Implementar este método
+        return null;
+    }
+
+    @Override
+    public Map<String, Double> calculatePhysicalProgressMetrics(UUID userId, int months) {
+        // TODO: Implementar este método
+        return null;
+    }
+
+    // ------------- Gestión de rutinas -------------
+
+    @Override
+    public List<Routine> getUserRoutines(UUID userId) {
+        // TODO: Implementar este método
+        return null;
+    }
+
+    @Override
+    public void assignRoutineToUser(UUID userId, UUID routineId) {
+        // TODO: Implementar este método
+    }
+
+    @Override
+    public Routine createCustomRoutine(UUID userId, Routine routine) {
+        // TODO: Implementar este método
+        return null;
+    }
+
+    @Override
+    public Routine updateRoutine(UUID routineId, Routine routine) {
+        // TODO: Implementar este método
+        return null;
+    }
+
+    @Override
+    public boolean logRoutineProgress(UUID userId, UUID routineId, int completed) {
+        // TODO: Implementar este método
+        return false;
+    }
+
+    @Override
+    public List<Routine> getRecommendedRoutines(UUID userId) {
+        // TODO: Implementar este método
+        return null;
+    }
+
+    // ------------- Reservas de gimnasio -------------
+
+    @Override
+    public UUID createGymReservation(UUID userId, LocalDate date, LocalTime startTime, LocalTime endTime, Optional<List<UUID>> equipmentIds) {
+        // TODO: Implementar este método
+        return null;
+    }
+
+    @Override
+    public boolean cancelGymReservation(UUID reservationId, UUID userId, Optional<String> reason) {
+        // TODO: Implementar este método
+        return false;
+    }
+
+    @Override
+    public List<Object> getUpcomingReservations(UUID userId) {
+        // TODO: Implementar este método
+        return null;
+    }
+
+    @Override
+    public List<Object> getReservationHistory(UUID userId, Optional<LocalDate> startDate, Optional<LocalDate> endDate) {
+        // TODO: Implementar este método
+        return null;
+    }
+
+    @Override
+    public boolean checkGymAvailability(LocalDate date, LocalTime startTime, LocalTime endTime) {
+        // TODO: Implementar este método
+        return false;
+    }
+
+    @Override
+    public List<Object> getAvailableTimeSlots(LocalDate date) {
+        // TODO: Implementar este método
+        return null;
+    }
+
+    @Override
+    public boolean recordGymAttendance(UUID reservationId, boolean attended, UUID trainerId) {
+        // TODO: Implementar este método
+        return false;
+    }
+
+    // ------------- Administración de equipos -------------
+
+    @Override
+    public List<EquipmentDTO> getAllEquipment() {
+        // TODO: Implementar este método
+        return null;
+    }
+
+    @Override
+    public Optional<EquipmentDTO> getEquipmentById(UUID id) {
+        // TODO: Implementar este método
+        return Optional.empty();
+    }
+
+    @Override
+    public EquipmentDTO saveEquipment(EquipmentDTO equipment) {
+        // TODO: Implementar este método
+        return null;
+    }
+
+    @Override
+    public EquipmentDTO updateEquipment(EquipmentDTO equipment) {
+        // TODO: Implementar este método
+        return null;
+    }
+
+    @Override
+    public EquipmentDTO sendEquipmentToMaintenance(UUID equipmentId, LocalDate endDate) {
+        // TODO: Implementar este método
+        return null;
+    }
+
+    @Override
+    public EquipmentDTO completeEquipmentMaintenance(UUID equipmentId) {
+        // TODO: Implementar este método
+        return null;
+    }
+
+    // ------------- Reportes y estadísticas -------------
+
+    @Override
+    public Map<String, Object> generateAttendanceReport(UUID userId, LocalDate startDate, LocalDate endDate) {
+        // TODO: Implementar este método
+        return null;
+    }
+
+    @Override
+    public Map<String, Object> generatePhysicalEvolutionReport(UUID userId, LocalDate startDate, LocalDate endDate) {
+        // TODO: Implementar este método
+        return null;
+    }
+
+    @Override
+    public Map<String, Object> generateGymUsageStatistics(LocalDate startDate, LocalDate endDate) {
+        // TODO: Implementar este método
+        return null;
     }
 }
