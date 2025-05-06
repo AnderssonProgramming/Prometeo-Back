@@ -9,6 +9,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -23,7 +25,8 @@ import java.util.UUID;
 @Tag(name = "Physical Progress", description = "Endpoints para gestionar el progreso físico de los usuarios")
 public class PhysicalProgressController {
 
-    private final PhysicalProgressService physicalProgressService;
+    @Autowired
+    private PhysicalProgressService physicalProgressService;
 
     @Operation(summary = "Registrar nueva medición física")
     @ApiResponses({
