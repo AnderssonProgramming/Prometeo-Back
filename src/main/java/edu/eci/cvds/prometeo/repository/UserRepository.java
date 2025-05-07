@@ -25,5 +25,5 @@ public interface UserRepository extends JpaRepository<User, UUID> {
      * @param trainerId the UUID of the trainer
      * @return a list of users associated with the given trainer
      */
-    List<User> findByTrainerId(UUID trainerId);
+    // List<User> findByTrainerId(UUID trainerId);
 }

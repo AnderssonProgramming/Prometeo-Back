@@ -4,12 +4,14 @@ import jakarta.persistence.*;
 import java.time.LocalDate;
 import java.util.UUID;
 
+import edu.eci.cvds.prometeo.model.base.BaseEntity;
+
 /**
  * Entity representing a user in the system
  */
 @Entity
 @Table(name = "users")
-public class User {
+public class User extends BaseEntity {
     
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
