@@ -208,7 +208,7 @@ public interface UserService {
      * @param userId ID del usuario
      * @return lista de reservas
      */
-    List<Object> getUpcomingReservations(UUID userId);
+    List<ReservationDTO> getUpcomingReservations(UUID userId);
     
     /**
      * Obtener historial de reservas
@@ -217,7 +217,7 @@ public interface UserService {
      * @param endDate fecha de fin opcional
      * @return lista de reservas
      */
-    List<Object> getReservationHistory(UUID userId, Optional<LocalDate> startDate, Optional<LocalDate> endDate);
+    List<ReservationDTO> getReservationHistory(UUID userId, Optional<LocalDate> startDate, Optional<LocalDate> endDate);
     
     /**
      * Verificar disponibilidad de horarios
@@ -233,7 +233,7 @@ public interface UserService {
      * @param date fecha a consultar
      * @return lista de slots disponibles
      */
-    List<Object> getAvailableTimeSlots(LocalDate date);
+    List<GymSessionDTO> getAvailableTimeSlots(LocalDate date);
     
     /**
      * Registrar asistencia a reserva
@@ -243,6 +243,72 @@ public interface UserService {
      * @return true si se registró correctamente
      */
     boolean recordGymAttendance(UUID reservationId, boolean attended, UUID trainerId);
+
+    /**
+     * Añadir usuario a lista de espera
+     * @param userId ID del usuario
+     * @param sessionId ID de la sesión
+     * @return true si se añadió correctamente
+     */
+    boolean joinWaitlist(UUID userId, UUID sessionId);
+    
+    /**
+     * Crear sesión de gimnasio (FR5)
+     * @param date fecha de la sesión
+     * @param startTime hora de inicio
+     * @param endTime hora de fin
+     * @param capacity capacidad máxima
+     * @param description descripción opcional
+     * @param trainerId ID del entrenador
+     * @return ID de la sesión creada
+     */
+    UUID createGymSession(LocalDate date, LocalTime startTime, LocalTime endTime, 
+                        int capacity, Optional<String> description, UUID trainerId);
+    
+    /**
+     * Actualizar sesión de gimnasio (FR5)
+     * @param sessionId ID de la sesión
+     * @param date nueva fecha
+     * @param startTime nueva hora de inicio
+     * @param endTime nueva hora de fin
+     * @param capacity nueva capacidad
+     * @param trainerId ID del entrenador
+     * @return true si se actualizó correctamente
+     */
+    boolean updateGymSession(UUID sessionId, LocalDate date, LocalTime startTime, 
+                           LocalTime endTime, int capacity, UUID trainerId);
+    
+    /**
+     * Cancelar sesión de gimnasio (FR5)
+     * @param sessionId ID de la sesión
+     * @param reason motivo de cancelación
+     * @param trainerId ID del entrenador
+     * @return true si se canceló correctamente
+     */
+    boolean cancelGymSession(UUID sessionId, String reason, UUID trainerId);
+    
+    /**
+     * Obtener sesiones por entrenador (FR5)
+     * @param trainerId ID del entrenador
+     * @return lista de sesiones
+     */
+    List<GymSession> getSessionsByTrainer(UUID trainerId);
+    
+    /**
+     * Obtener usuarios registrados en una sesión (FR5)
+     * @param sessionId ID de la sesión
+     * @return lista de usuarios
+     */
+    List<User> getRegisteredUsersForSession(UUID sessionId);
+    
+    /**
+     * Obtener estadísticas de ocupación de sesiones (FR5)
+     * @param trainerId ID del entrenador
+     * @param startDate fecha de inicio opcional
+     * @param endDate fecha de fin opcional
+     * @return estadísticas de ocupación
+     */
+    Map<String, Object> getSessionOccupancyStats(UUID trainerId, Optional<LocalDate> startDate, Optional<LocalDate> endDate);
     
     // ------------- Administración de equipos -------------
     

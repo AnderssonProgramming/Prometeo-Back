@@ -1,8 +1,11 @@
 package edu.eci.cvds.prometeo.service.impl;
 
+import edu.eci.cvds.prometeo.PrometeoExceptions;
 import edu.eci.cvds.prometeo.dto.*;
 import edu.eci.cvds.prometeo.model.*;
 import edu.eci.cvds.prometeo.repository.*;
+import edu.eci.cvds.prometeo.service.GymReservationService;
+import edu.eci.cvds.prometeo.service.GymSessionService;
 import edu.eci.cvds.prometeo.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -54,6 +57,9 @@ public class UserServiceImpl implements UserService {
     private final PhysicalProgressRepository physicalProgressRepository;
     private final RoutineRepository routineRepository;
     private final EquipmentRepository equipmentRepository;
+
+    private final GymReservationService gymReservationService;
+    private final GymSessionService gymSessionService;
     // Agregar otros repositorios según sea necesario
 
     @Autowired
@@ -61,11 +67,15 @@ public class UserServiceImpl implements UserService {
             UserRepository userRepository,
             PhysicalProgressRepository physicalProgressRepository,
             RoutineRepository routineRepository,
-            EquipmentRepository equipmentRepository) {
+            EquipmentRepository equipmentRepository,
+            GymReservationService gymReservationService,
+            GymSessionService gymSessionService) {
         this.userRepository = userRepository;
         this.physicalProgressRepository = physicalProgressRepository;
         this.routineRepository = routineRepository;
         this.equipmentRepository = equipmentRepository;
+        this.gymReservationService = gymReservationService;
+        this.gymSessionService = gymSessionService;
     }
 
     // ------------- Operaciones básicas de usuario -------------
@@ -182,46 +192,122 @@ public class UserServiceImpl implements UserService {
 
     // ------------- Reservas de gimnasio -------------
 
+// ------------- Reservas de gimnasio -------------
+
     @Override
     public UUID createGymReservation(UUID userId, LocalDate date, LocalTime startTime, LocalTime endTime, Optional<List<UUID>> equipmentIds) {
-        // TODO: Implementar este método
-        return null;
+        // Find the session for the given date and time
+        List<GymSession> availableSessions = gymReservationService.getAvailableSessionsByDate(date);
+        UUID sessionId = null;
+        
+        for (GymSession session : availableSessions) {
+            if (session.getStartTime().equals(startTime) && session.getEndTime().equals(endTime)) {
+                sessionId = session.getId();
+                break;
+            }
+        }
+        
+        if (sessionId == null) {
+            throw new PrometeoExceptions("No hay sesiones disponibles para la fecha y hora seleccionadas");
+        }
+        
+        return gymReservationService.makeReservation(userId, sessionId, equipmentIds);
     }
 
     @Override
     public boolean cancelGymReservation(UUID reservationId, UUID userId, Optional<String> reason) {
-        // TODO: Implementar este método
-        return false;
+        return gymReservationService.cancelReservation(reservationId, userId, reason);
     }
 
     @Override
-    public List<Object> getUpcomingReservations(UUID userId) {
-        // TODO: Implementar este método
-        return null;
+    public List<ReservationDTO> getUpcomingReservations(UUID userId) {
+        return gymReservationService.getUpcomingReservations(userId);
     }
 
     @Override
-    public List<Object> getReservationHistory(UUID userId, Optional<LocalDate> startDate, Optional<LocalDate> endDate) {
-        // TODO: Implementar este método
-        return null;
+    public List<ReservationDTO> getReservationHistory(UUID userId, Optional<LocalDate> startDate, Optional<LocalDate> endDate) {
+        return gymReservationService.getReservationHistory(userId, startDate, endDate);
     }
 
     @Override
     public boolean checkGymAvailability(LocalDate date, LocalTime startTime, LocalTime endTime) {
-        // TODO: Implementar este método
-        return false;
+        List<GymSession> availableSessions = gymReservationService.getAvailableSessionsByDate(date);
+        
+        return availableSessions.stream()
+            .anyMatch(session -> 
+                session.getStartTime().equals(startTime) && 
+                session.getEndTime().equals(endTime));
     }
 
     @Override
-    public List<Object> getAvailableTimeSlots(LocalDate date) {
-        // TODO: Implementar este método
-        return null;
+    public List<GymSessionDTO> getAvailableTimeSlots(LocalDate date) {
+        List<GymSession> availableSessions = gymReservationService.getAvailableSessionsByDate(date);
+        List<GymSessionDTO> sessionDTOs = new ArrayList<>();
+        
+        for (GymSession session : availableSessions) {
+            GymSessionDTO dto = new GymSessionDTO();
+            dto.setId(session.getId());
+            dto.setSessionDate(session.getSessionDate());
+            dto.setStartTime(session.getStartTime());
+            dto.setEndTime(session.getEndTime());
+            dto.setCapacity(session.getCapacity());
+            dto.setReservedSpots(session.getCurrentBookings());
+            dto.setAvailableSpots(session.getAvailableSpots());
+            dto.setTrainerId(session.getTrainerId());
+            
+            // Get trainer name
+            userRepository.findById(session.getTrainerId())
+                .ifPresent(trainer -> dto.setTrainerName(trainer.getName()));
+            
+            dto.setDescription(session.getDescription());
+            dto.setStatus(session.getStatus());
+            sessionDTOs.add(dto);
+        }
+        
+        return sessionDTOs;
     }
 
     @Override
     public boolean recordGymAttendance(UUID reservationId, boolean attended, UUID trainerId) {
-        // TODO: Implementar este método
-        return false;
+        return gymReservationService.recordAttendance(reservationId, attended, trainerId);
+    }
+
+    // Trainer-specific methods for FR5
+    @Override
+    public UUID createGymSession(LocalDate date, LocalTime startTime, LocalTime endTime, 
+                               int capacity, Optional<String> description, UUID trainerId) {
+        return gymSessionService.createSession(date, startTime, endTime, capacity, description, trainerId);
+    }
+    
+    @Override
+    public boolean updateGymSession(UUID sessionId, LocalDate date, LocalTime startTime, 
+                                  LocalTime endTime, int capacity, UUID trainerId) {
+        return gymSessionService.updateSession(sessionId, date, startTime, endTime, capacity, trainerId);
+    }
+    
+    @Override
+    public boolean cancelGymSession(UUID sessionId, String reason, UUID trainerId) {
+        return gymSessionService.cancelSession(sessionId, reason, trainerId);
+    }
+    
+    @Override
+    public List<GymSession> getSessionsByTrainer(UUID trainerId) {
+        return gymSessionService.getSessionsByTrainer(trainerId);
+    }
+    
+    @Override
+    public List<User> getRegisteredUsersForSession(UUID sessionId) {
+        return gymSessionService.getRegisteredUsersForSession(sessionId);
+    }
+    
+    @Override
+    public Map<String, Object> getSessionOccupancyStats(UUID trainerId, Optional<LocalDate> startDate, Optional<LocalDate> endDate) {
+        return gymSessionService.getSessionOccupancyStats(trainerId, startDate, endDate);
+    }
+    
+    @Override
+    public boolean joinWaitlist(UUID userId, UUID sessionId) {
+        return gymReservationService.addToWaitlist(userId, sessionId);
     }
 
     // ------------- Administración de equipos -------------

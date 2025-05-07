@@ -2,40 +2,28 @@ package edu.eci.cvds.prometeo.repository;
 
 import edu.eci.cvds.prometeo.model.GymSession;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
-import java.time.LocalTime;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 @Repository
 public interface GymSessionRepository extends JpaRepository<GymSession, UUID> {
     
-    /**
-     * Find sessions by date ordered by start time
-     */
-    List<GymSession> findBySessionDateOrderByStartTime(LocalDate date);
+    List<GymSession> findBySessionDateOrderByStartTimeAsc(LocalDate date);
     
-    /**
-     * Find sessions by date and trainer ID
-     */
-    List<GymSession> findBySessionDateAndTrainerId(LocalDate date, UUID trainerId);
+    List<GymSession> findByTrainerIdOrderBySessionDateAscStartTimeAsc(UUID trainerId);
     
-    /**
-     * Find sessions by date range
-     */
-    List<GymSession> findBySessionDateBetween(LocalDate startDate, LocalDate endDate);
+    List<GymSession> findByTrainerIdAndSessionDate(UUID trainerId, LocalDate date);
     
-    /**
-     * Find a session that covers the specified time slot
-     */
-    Optional<GymSession> findBySessionDateAndStartTimeLessThanEqualAndEndTimeGreaterThanEqual(
-            LocalDate date, LocalTime startTime, LocalTime endTime);
+    List<GymSession> findByTrainerIdAndSessionDateBetween(UUID trainerId, LocalDate startDate, LocalDate endDate);
     
-    /**
-     * Find sessions with available capacity
-     */
-    List<GymSession> findBySessionDateAndReservedSpotsLessThan(LocalDate date, int capacity);
+    @Query("SELECT s FROM GymSession s WHERE s.sessionDate = :date AND s.status = 'ACTIVE' AND s.currentBookings < s.capacity ORDER BY s.startTime")
+    List<GymSession> findAvailableSessionsByDate(@Param("date") LocalDate date);
+    
+    @Query("SELECT COUNT(r) FROM Reservation r WHERE r.sessionId = :sessionId AND r.attended = true")
+    int countAttendanceBySessionId(@Param("sessionId") UUID sessionId);
 }

@@ -61,99 +61,9 @@ public class Reservation extends AuditableEntity {
 
     @Column(name = "canceled_at")
     private LocalDateTime canceledAt;
-
-    // Getters and setters
-    public UUID getId() {
-        return id;
-    }
-
-    public void setId(UUID id) {
-        this.id = id;
-    }
-
-    public UUID getUserId() {
-        return userId;
-    }
-
-    public void setUserId(UUID userId) {
-        this.userId = userId;
-    }
-
-    public UUID getSessionId() {
-        return sessionId;
-    }
-
-    public void setSessionId(UUID sessionId) {
-        this.sessionId = sessionId;
-    }
-
-    public LocalDateTime getReservationDate() {
-        return reservationDate;
-    }
-
-    public void setReservationDate(LocalDateTime reservationDate) {
-        this.reservationDate = reservationDate;
-    }
-
-    public ReservationStatus getStatus() {
-        return status;
-    }
-
-    public void setStatus(ReservationStatus status) {
-        this.status = status;
-    }
-
-    public void setStatus(String status) {
-        this.status = ReservationStatus.valueOf(status);
-    }
-
-    public List<UUID> getEquipmentIds() {
-        return equipmentIds;
-    }
-
-    public void setEquipmentIds(List<UUID> equipmentIds) {
-        this.equipmentIds = equipmentIds;
-    }
-
-    public Boolean getAttended() {
-        return attended;
-    }
-
-    public void setAttended(Boolean attended) {
-        this.attended = attended;
-    }
-
-    public String getCancellationReason() {
-        return cancellationReason;
-    }
-
-    public void setCancellationReason(String cancellationReason) {
-        this.cancellationReason = cancellationReason;
-    }
-
-    public UUID getCompletedById() {
-        return completedById;
-    }
-
-    public void setCompletedById(UUID completedById) {
-        this.completedById = completedById;
-    }
-
-    public LocalDateTime getCompletedAt() {
-        return completedAt;
-    }
-
-    public void setCompletedAt(LocalDateTime completedAt) {
-        this.completedAt = completedAt;
-    }
-
-    public LocalDateTime getCanceledAt() {
-        return canceledAt;
-    }
-
-    public void setCanceledAt(LocalDateTime canceledAt) {
-        this.canceledAt = canceledAt;
-    }
+    
+    @Column(name = "waitlist_notification_requested")
+    private boolean waitlistNotificationRequested = false;
 
     // Utility methods
     public LocalDate getDate() {
@@ -165,7 +75,7 @@ public class Reservation extends AuditableEntity {
     }
 
     public LocalTime getEndTime() {
-        // Assuming a default session length of 1 hour if not specified elsewhere
+        // Assuming a default session length if not explicitly stored
         return reservationDate.toLocalTime().plusHours(1);
     }
 
@@ -175,10 +85,6 @@ public class Reservation extends AuditableEntity {
 
     public void setStartTime(LocalTime startTime) {
         this.reservationDate = LocalDateTime.of(reservationDate.toLocalDate(), startTime);
-    }
-
-    public void setEndTime(LocalTime endTime) {
-        // This is only used to store the end time metadata, actual end time is derived from session
     }
 
     public void confirm() {
@@ -196,5 +102,9 @@ public class Reservation extends AuditableEntity {
 
     public boolean isActive() {
         return this.status == ReservationStatus.CONFIRMED || this.status == ReservationStatus.PENDING;
+    }
+
+    public boolean isAttended() {
+        return this.attended != null && this.attended;
     }
 }
