@@ -1,8 +1,11 @@
 package edu.eci.cvds.prometeo.service.impl;
 
+import edu.eci.cvds.prometeo.PrometeoExceptions;
+import edu.eci.cvds.prometeo.model.Goal;
 import edu.eci.cvds.prometeo.model.Routine;
 import edu.eci.cvds.prometeo.model.User;
 import edu.eci.cvds.prometeo.model.PhysicalProgress;
+import edu.eci.cvds.prometeo.repository.GoalRepository;
 import edu.eci.cvds.prometeo.repository.RoutineRepository;
 import edu.eci.cvds.prometeo.repository.UserRepository;
 import edu.eci.cvds.prometeo.repository.PhysicalProgressRepository;
@@ -24,6 +27,8 @@ public class RecommendationServiceImpl implements RecommendationService {
 
     @Autowired
     private UserRepository userRepository;
+    @Autowired
+    private GoalRepository goalRepository;
 
     @Autowired
     private PhysicalProgressRepository physicalProgressRepository;
@@ -34,48 +39,63 @@ public class RecommendationServiceImpl implements RecommendationService {
     @Override
     public List<Map<Routine, Integer>> recommendRoutines(UUID userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+                .orElseThrow(() -> new PrometeoExceptions(PrometeoExceptions.NO_EXISTE_USUARIO));
 
-        String goal = user.getProgramCode();
+        List<Goal> goals = goalRepository.findByUserIdAndActive(userId, true);
         List<Routine> allRoutines = routineRepository.findAll();
 
-        StringBuilder prompt = new StringBuilder();
-        prompt.append("La meta del usuario es: ").append(goal).append(".\n");
-        prompt.append("Las rutinas disponibles son:\n");
-        for (Routine routine : allRoutines) {
-            prompt.append("- ").append(routine.getName()).append(": ").append(routine.getDescription()).append("\n");
-        }
-        prompt.append("Con base en la meta, ¿cuál rutina sería la más adecuada? Solo responde con el nombre de la rutina.");
+        String prompt = buildPrompt(goals, allRoutines);
 
         try {
-            String response = huggingFaceClient.queryModel(prompt.toString());
-            List<String> recommendedNames = extractRoutineNames(response);
-
-            List<Map<Routine, Integer>> recommendedRoutines = new ArrayList<>();
-            for (int i = 0; i < recommendedNames.size(); i++) {
-                String name = recommendedNames.get(i).trim().toLowerCase();
-                int finalI = i;
-                allRoutines.stream()
-                        .filter(r -> r.getName().equalsIgnoreCase(name))
-                        .findFirst()
-                        .ifPresent(routine -> {
-                            Map<Routine, Integer> entry = new HashMap<>();
-                            entry.put(routine, 100 - finalI * 10);
-                            recommendedRoutines.add(entry);
-                        });
-            }
-            return recommendedRoutines;
-
+            String response = huggingFaceClient.queryModel(prompt);
+            List<UUID> ids = parseUUIDList(response);
+            return buildRecommendations(ids);
         } catch (Exception e) {
             e.printStackTrace();
             return new ArrayList<>();
         }
     }
 
-    private List<String> extractRoutineNames(String response) {
-        return Arrays.stream(response.strip().split("\n"))
-                .filter(line -> !line.isBlank())
+    private String buildPrompt(List<Goal> goals, List<Routine> allRoutines) {
+        StringBuilder prompt = new StringBuilder();
+        prompt.append("Las metas del usuario son:\n");
+        for (Goal goal : goals) {
+            prompt.append("- ").append(goal.getGoal()).append("\n");
+        }
+
+        prompt.append("Las rutinas disponibles son:\n");
+        for (Routine routine : allRoutines) {
+            prompt.append("- ID: ").append(routine.getId())
+                    .append(" | Nombre: ").append(routine.getName())
+                    .append(" | Descripción: ").append(routine.getDescription()).append("\n");
+        }
+
+        prompt.append("Según las metas del usuario, responde solo con los IDs de las rutinas recomendadas, separados por comas (máximo 10 recomendaciones).\n");
+        prompt.append("Ejemplo: 123e4567-e89b-12d3-a456-426614174000, 123e4567-e89b-12d3-a456-426614174001");
+
+        return prompt.toString();
+    }
+
+    private List<UUID> parseUUIDList(String response) {
+        return Arrays.stream(response.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .map(UUID::fromString)
                 .collect(Collectors.toList());
+    }
+
+    private List<Map<Routine, Integer>> buildRecommendations(List<UUID> ids) {
+        List<Map<Routine, Integer>> recommendedRoutines = new ArrayList<>();
+        for (int i = 0; i < ids.size(); i++) {
+            UUID id = ids.get(i);
+            int finalI = i;
+            routineRepository.findById(id).ifPresent(routine -> {
+                Map<Routine, Integer> entry = new HashMap<>();
+                entry.put(routine, 100 - finalI * 10); // Peso o relevancia de la rutina
+                recommendedRoutines.add(entry);
+            });
+        }
+        return recommendedRoutines;
     }
 
     @Override

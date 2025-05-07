@@ -21,6 +21,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * REST Controller for managing user-related operations in the Prometeo application.
@@ -50,6 +51,9 @@ public class UserController {
     
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private GoalService goalService;
 
     // -----------------------------------------------------
     // User profile endpoints
@@ -129,34 +133,55 @@ public class UserController {
     // // -----------------------------------------------------
     // // Goals endpoints
     // // -----------------------------------------------------
-    
-    // @PostMapping("/{userId}/goals")
-    // @Operation(summary = "Create goal", description = "Creates a new fitness goal for a user")
-    // @ApiResponse(responseCode = "201", description = "Goal created successfully")
-    // public ResponseEntity<Goal> createGoal(
-    //         @Parameter(description = "User ID") @PathVariable Long userId,
-    //         @Parameter(description = "Goal data") @RequestBody GoalDTO goalDTO);
 
-    // @GetMapping("/{userId}/goals")
-    // @Operation(summary = "Get user goals", description = "Retrieves all goals for a user")
-    // @ApiResponse(responseCode = "200", description = "Goals retrieved successfully")
-    // public ResponseEntity<List<Goal>> getUserGoals(@Parameter(description = "User ID") @PathVariable Long userId);
+    @PostMapping("/{userId}/goals")
+    @Operation(summary = "Create goal", description = "Creates a new fitness goal for a user")
+    @ApiResponse(responseCode = "201", description = "Goal created successfully")
+    public ResponseEntity<String> createGoal(
+            @Parameter(description = "User ID") @PathVariable UUID userId,
+            @Parameter(description = "Goal data") @RequestBody List<String> goals) {
+        try {
+            goalService.addUserGoal(userId, goals);
+            return ResponseEntity.ok("Goals updated and recommendations refreshed.");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
+    }
 
-    // @PutMapping("/{userId}/goals/{goalId}")
-    // @Operation(summary = "Update goal", description = "Updates an existing goal")
-    // @ApiResponse(responseCode = "200", description = "Goal updated successfully")
-    // public ResponseEntity<Goal> updateGoal(
-    //         @Parameter(description = "User ID") @PathVariable Long userId,
-    //         @Parameter(description = "Goal ID") @PathVariable Long goalId,
-    //         @Parameter(description = "Updated goal data") @RequestBody GoalDTO goalDTO);
-    
-    // @DeleteMapping("/{userId}/goals/{goalId}")
-    // @Operation(summary = "Delete goal", description = "Deletes a goal")
-    // @ApiResponse(responseCode = "200", description = "Goal deleted successfully")
-    // public ResponseEntity<Void> deleteGoal(
-    //         @Parameter(description = "User ID") @PathVariable Long userId,
-    //         @Parameter(description = "Goal ID") @PathVariable Long goalId);
-    
+    @GetMapping("/{userId}/goals")
+    @Operation(summary = "Get user goals", description = "Retrieves all goals for a user")
+    @ApiResponse(responseCode = "200", description = "Goals retrieved successfully")
+    public ResponseEntity<List<Goal>> getUserGoals(@Parameter(description = "User ID") @PathVariable UUID userId) {
+        List<Goal> goals = goalService.getGoalsByUser(userId);
+        return ResponseEntity.ok(goals);
+    }
+
+    @PutMapping("/{userId}/goals/{goalId}")
+    @Operation(summary = "Update goal", description = "Updates an existing goal")
+    @ApiResponse(responseCode = "200", description = "Goal updated successfully")
+    public ResponseEntity<String> updateGoal(
+            @Parameter(description = "Map of Goal IDs and updated text") @RequestBody Map<UUID, String> updatedGoals) {
+        try {
+            goalService.updateUserGoal(updatedGoals);
+            return ResponseEntity.ok("Goal updated.");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
+    }
+
+    @DeleteMapping("/{userId}/goals/{goalId}")
+    @Operation(summary = "Delete goal", description = "Deletes a goal")
+    @ApiResponse(responseCode = "200", description = "Goal deleted successfully")
+    public ResponseEntity<String> deleteGoal(
+            @Parameter(description = "Goal ID") @PathVariable UUID goalId) {
+        try {
+            goalService.deleteGoal(goalId);
+            return ResponseEntity.ok("Goal deleted.");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
+    }
+
     // @GetMapping("/{userId}/goals/progress")
     // @Operation(summary = "Get goals progress", description = "Retrieves progress for all user goals")
     // @ApiResponse(responseCode = "200", description = "Progress retrieved successfully")

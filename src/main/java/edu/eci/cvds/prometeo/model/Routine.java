@@ -19,6 +19,10 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Routine extends AuditableEntity {
+    @Id
+    @GeneratedValue
+    @Column(columnDefinition = "id", updatable = false, nullable = false)
+    private UUID id;
 
     @Column(name = "name", nullable = false)
     private String name;
@@ -70,6 +74,9 @@ public class Routine extends AuditableEntity {
         return true;
     }
 
+    public void setId(UUID id) {this.id = id;}
+
+    public UUID getId() {return id;}
 
     public void setDifficulty(String difficulty) {
         this.difficulty = difficulty;
