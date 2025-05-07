@@ -1,6 +1,8 @@
 package edu.eci.cvds.prometeo.repository;
 
 import edu.eci.cvds.prometeo.model.Routine;
+import edu.eci.cvds.prometeo.model.RoutineExercise;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -23,4 +25,9 @@ public interface RoutineRepository extends JpaRepository<Routine, UUID> {
 
     @Query("SELECT r FROM Routine r JOIN UserRoutine ur ON r.id = ur.routineId WHERE ur.userId = :userId AND ur.active = true")
     Optional<Routine> findCurrentRoutineByUserId(@Param("userId") UUID userId);
+
+    // List<RoutineExercise> findByRoutineId(UUID routineId);
+    // void deleteByRoutineId(UUID routineId);
+
+    List<Routine> findByGoalAndDifficulty(String goal, String difficulty);
 }

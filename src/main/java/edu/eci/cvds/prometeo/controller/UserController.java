@@ -1,6 +1,8 @@
 package edu.eci.cvds.prometeo.controller;
 
 import edu.eci.cvds.prometeo.model.*;
+import edu.eci.cvds.prometeo.repository.RoutineExerciseRepository;
+import edu.eci.cvds.prometeo.repository.RoutineRepository;
 import edu.eci.cvds.prometeo.service.*;
 import edu.eci.cvds.prometeo.dto.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +21,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -56,6 +59,16 @@ public class UserController {
 
     @Autowired
     private UserService userService;
+
+    // TODO: Move this logic to userservice layer
+    @Autowired
+    private RoutineRepository routineRepository;
+
+    @Autowired
+    private RoutineExerciseRepository routineExerciseRepository;
+
+    @Autowired
+    private BaseExerciseService baseExerciseService;
 
     // -----------------------------------------------------
     // User profile endpoints
@@ -253,116 +266,222 @@ public class UserController {
 
         return ResponseEntity.ok(history);
     }
-    // // -----------------------------------------------------
-    // // Goals endpoints
-    // // -----------------------------------------------------
+    // -----------------------------------------------------
+// Routine management endpoints
+// -----------------------------------------------------
 
-    // @PostMapping("/{userId}/goals")
-    // @Operation(summary = "Create goal", description = "Creates a new fitness goal
-    // for a user")
-    // @ApiResponse(responseCode = "201", description = "Goal created successfully")
-    // public ResponseEntity<Goal> createGoal(
-    // @Parameter(description = "User ID") @PathVariable Long userId,
-    // @Parameter(description = "Goal data") @RequestBody GoalDTO goalDTO);
+@GetMapping("/{userId}/routines")
+@Operation(summary = "Get user routines", description = "Retrieves all routines assigned to a user")
+@ApiResponse(responseCode = "200", description = "Routines retrieved successfully")
+@ApiResponse(responseCode = "404", description = "User not found")
+public ResponseEntity<List<Routine>> getUserRoutines(
+        @Parameter(description = "User ID") @PathVariable UUID userId) {
+    
+    List<Routine> routines = userService.getUserRoutines(userId);
+    return ResponseEntity.ok(routines);
+}
 
-    // @GetMapping("/{userId}/goals")
-    // @Operation(summary = "Get user goals", description = "Retrieves all goals for
-    // a user")
-    // @ApiResponse(responseCode = "200", description = "Goals retrieved
-    // successfully")
-    // public ResponseEntity<List<Goal>> getUserGoals(@Parameter(description = "User
-    // ID") @PathVariable Long userId);
+@GetMapping("/{userId}/routines/current")
+@Operation(summary = "Get current routine", description = "Retrieves the user's current active routine")
+@ApiResponse(responseCode = "200", description = "Routine retrieved successfully")
+@ApiResponse(responseCode = "404", description = "No active routine found")
+public ResponseEntity<Routine> getCurrentRoutine(
+        @Parameter(description = "User ID") @PathVariable UUID userId) {
+    // TODO: Move this logic to userservice layer
+    return routineRepository.findCurrentRoutineByUserId(userId)
+            .map(routine -> ResponseEntity.ok(routine))
+            .orElse(ResponseEntity.notFound().build());
+}
 
-    // @PutMapping("/{userId}/goals/{goalId}")
-    // @Operation(summary = "Update goal", description = "Updates an existing goal")
-    // @ApiResponse(responseCode = "200", description = "Goal updated successfully")
-    // public ResponseEntity<Goal> updateGoal(
-    // @Parameter(description = "User ID") @PathVariable Long userId,
-    // @Parameter(description = "Goal ID") @PathVariable Long goalId,
-    // @Parameter(description = "Updated goal data") @RequestBody GoalDTO goalDTO);
+@PostMapping("/{userId}/routines/assign/{routineId}")
+@Operation(summary = "Assign routine to user", description = "Assigns an existing routine to a user")
+@ApiResponse(responseCode = "204", description = "Routine assigned successfully")
+@ApiResponse(responseCode = "404", description = "User or routine not found")
+public ResponseEntity<Void> assignRoutineToUser(
+        @Parameter(description = "User ID") @PathVariable UUID userId,
+        @Parameter(description = "Routine ID") @PathVariable UUID routineId) {
+    
+    userService.assignRoutineToUser(userId, routineId);
+    return ResponseEntity.noContent().build();
+}
 
-    // @DeleteMapping("/{userId}/goals/{goalId}")
-    // @Operation(summary = "Delete goal", description = "Deletes a goal")
-    // @ApiResponse(responseCode = "200", description = "Goal deleted successfully")
-    // public ResponseEntity<Void> deleteGoal(
-    // @Parameter(description = "User ID") @PathVariable Long userId,
-    // @Parameter(description = "Goal ID") @PathVariable Long goalId);
+@PostMapping("/{userId}/routines/custom")
+@Operation(summary = "Create custom routine", description = "Creates a custom routine for a user")
+@ApiResponse(responseCode = "201", description = "Routine created successfully")
+@ApiResponse(responseCode = "404", description = "User not found")
+public ResponseEntity<Routine> createCustomRoutine(
+        @Parameter(description = "User ID") @PathVariable UUID userId,
+        @Parameter(description = "Routine data") @RequestBody RoutineDTO routineDTO) {
+    
+    // Convertir DTO a entidad
+    Routine routine = new Routine();
+    routine.setName(routineDTO.getName());
+    routine.setDescription(routineDTO.getDescription());
+    routine.setDifficulty(routineDTO.getDifficulty());
+    routine.setGoal(routineDTO.getGoal());
+    routine.setCreationDate(LocalDate.now());
+    
+    // Crear una lista vacía de ejercicios desde el principio
+    routine.setExercises(new ArrayList<>());
+    
+    // Crear primero la rutina con la lista vacía
+    Routine createdRoutine = userService.createCustomRoutine(userId, routine);
+    
+    // Ahora que la rutina tiene un ID, añadir los ejercicios uno por uno
+    if (routineDTO.getExercises() != null && !routineDTO.getExercises().isEmpty()) {
+        // Usar un enfoque de servicio para añadir cada ejercicio individualmente
+        for (RoutineExerciseDTO exerciseDTO : routineDTO.getExercises()) {
+            RoutineExercise exercise = new RoutineExercise();
+            exercise.setBaseExerciseId(exerciseDTO.getBaseExerciseId());
+            exercise.setRoutineId(createdRoutine.getId());
+            exercise.setSets(exerciseDTO.getSets());
+            exercise.setRepetitions(exerciseDTO.getRepetitions());
+            exercise.setRestTime(exerciseDTO.getRestTime());
+            exercise.setSequenceOrder(exerciseDTO.getSequenceOrder());
+            
+            // Añadir a la base de datos directamente sin pasar por la colección de la rutina
+            routineExerciseRepository.save(exercise);
+        }
+    }
+    
+    // Recargar la rutina para obtener todos los ejercicios asociados
+    return new ResponseEntity<>(
+        routineRepository.findById(createdRoutine.getId())
+            .orElseThrow(() -> new RuntimeException("Failed to find newly created routine")), 
+        HttpStatus.CREATED
+    );
+}
 
-    // @GetMapping("/{userId}/goals/progress")
-    // @Operation(summary = "Get goals progress", description = "Retrieves progress
-    // for all user goals")
-    // @ApiResponse(responseCode = "200", description = "Progress retrieved
-    // successfully")
-    // public ResponseEntity<List<GoalProgressDTO>>
-    // getUserGoalsProgress(@Parameter(description = "User ID") @PathVariable Long
-    // userId);
+@PutMapping("/routines/{routineId}")
+@Operation(summary = "Update routine", description = "Updates an existing routine")
+@ApiResponse(responseCode = "200", description = "Routine updated successfully")
+@ApiResponse(responseCode = "404", description = "Routine not found")
+public ResponseEntity<Routine> updateRoutine(
+        @Parameter(description = "Routine ID") @PathVariable UUID routineId,
+        @Parameter(description = "Updated routine data") @RequestBody RoutineDTO routineDTO) {
+    // TODO: Move this logic to userservice layer
+    // Buscar la rutina existente
+    Routine existingRoutine = routineRepository.findById(routineId)
+            .orElseThrow(() -> new RuntimeException("Routine not found"));
+    
+    // Actualizar campos
+    existingRoutine.setName(routineDTO.getName());
+    existingRoutine.setDescription(routineDTO.getDescription());
+    existingRoutine.setDifficulty(routineDTO.getDifficulty());
+    existingRoutine.setGoal(routineDTO.getGoal());
+    
+    // Actualizar la rutina
+    Routine updatedRoutine = userService.updateRoutine(routineId, existingRoutine);
+    return ResponseEntity.ok(updatedRoutine);
+}
 
-    // // -----------------------------------------------------
-    // // Routines endpoints
-    // // -----------------------------------------------------
+@PostMapping("/{userId}/routines/{routineId}/progress")
+@Operation(summary = "Log routine progress", description = "Records progress for a routine session")
+@ApiResponse(responseCode = "204", description = "Progress logged successfully")
+@ApiResponse(responseCode = "404", description = "User or routine not found")
+public ResponseEntity<Void> logRoutineProgress(
+        @Parameter(description = "User ID") @PathVariable UUID userId,
+        @Parameter(description = "Routine ID") @PathVariable UUID routineId,
+        @Parameter(description = "Progress percentage") @RequestBody Map<String, Integer> progressData) {
+    
+    Integer completedPercentage = progressData.get("completed");
+    if (completedPercentage == null) {
+        completedPercentage = 100; // Valor por defecto si no se proporciona
+    }
+    
+    userService.logRoutineProgress(userId, routineId, completedPercentage);
+    return ResponseEntity.noContent().build();
+}
 
-    // @GetMapping("/{userId}/routines")
-    // @Operation(summary = "Get user routines", description = "Retrieves all
-    // routines for a user")
-    // public ResponseEntity<List<Routine>> getUserRoutines(@Parameter(description =
-    // "User ID") @PathVariable Long userId);
+@GetMapping("/{userId}/recommended-routines")
+@Operation(summary = "Get recommended routines", description = "Retrieves personalized routine recommendations for a user")
+@ApiResponse(responseCode = "200", description = "Recommendations retrieved successfully")
+@ApiResponse(responseCode = "404", description = "User not found")
+public ResponseEntity<List<Routine>> getRecommendedRoutines(
+        @Parameter(description = "User ID") @PathVariable UUID userId) {
+    
+    List<Routine> recommendations = userService.getRecommendedRoutines(userId);
+    return ResponseEntity.ok(recommendations);
+}
 
-    // @GetMapping("/{userId}/routines/current")
-    // @Operation(summary = "Get current routine", description = "Retrieves the
-    // user's current active routine")
-    // public ResponseEntity<Routine> getCurrentRoutine(@Parameter(description =
-    // "User ID") @PathVariable Long userId);
-
-    // @PostMapping("/{userId}/routines/assign/{routineId}")
-    // @Operation(summary = "Assign routine to user", description = "Assigns an
-    // existing routine to a user")
-    // public ResponseEntity<Void> assignRoutineToUser(
-    // @Parameter(description = "User ID") @PathVariable Long userId,
-    // @Parameter(description = "Routine ID") @PathVariable Long routineId);
-
-    // @GetMapping("/routines/public")
-    // @Operation(summary = "Get public routines", description = "Retrieves publicly
-    // available routines with optional filters")
-    // public ResponseEntity<List<Routine>> getPublicRoutines(
-    // @Parameter(description = "Category filter") @RequestParam(required = false)
-    // String category,
-    // @Parameter(description = "Difficulty filter") @RequestParam(required = false)
-    // String difficulty);
-
-    // @PostMapping("/{userId}/routines/custom")
-    // @Operation(summary = "Create custom routine", description = "Creates a custom
-    // routine for a user")
-    // @PreAuthorize("hasRole('TRAINER') or
-    // @securityService.isResourceOwner(#userId)")
-    // public ResponseEntity<Routine> createCustomRoutine(
-    // @Parameter(description = "User ID") @PathVariable Long userId,
-    // @Parameter(description = "Routine data") @RequestBody RoutineDTO routineDTO);
-
-    // @PutMapping("/{userId}/routines/{routineId}")
-    // @Operation(summary = "Update routine", description = "Updates an existing
-    // routine")
-    // @PreAuthorize("hasRole('TRAINER') or
-    // @securityService.isResourceOwner(#userId)")
-    // public ResponseEntity<Routine> updateRoutine(
-    // @Parameter(description = "User ID") @PathVariable Long userId,
-    // @Parameter(description = "Routine ID") @PathVariable Long routineId,
-    // @Parameter(description = "Updated routine data") @RequestBody RoutineDTO
-    // routineDTO);
-
-    // @GetMapping("/routines/{routineId}/details")
-    // @Operation(summary = "Get routine details", description = "Retrieves detailed
-    // information about a routine")
-    // public ResponseEntity<RoutineDetailDTO>
-    // getRoutineDetails(@Parameter(description = "Routine ID") @PathVariable Long
-    // routineId);
-
-    // @PostMapping("/{userId}/routines/progress")
-    // @Operation(summary = "Log routine progress", description = "Records progress
-    // for a routine session")
-    // public ResponseEntity<RoutineProgress> logRoutineProgress(
-    // @Parameter(description = "User ID") @PathVariable Long userId,
-    // @Parameter(description = "Progress data") @RequestBody RoutineProgressDTO
-    // progressDTO);
+// --------------------------  Exercise crud ---------
+@GetMapping("/exercises")
+    @Operation(summary = "Get all exercises", description = "Retrieves all base exercises in the system")
+    @ApiResponse(responseCode = "200", description = "Exercises retrieved successfully")
+    public ResponseEntity<List<BaseExercise>> getAllExercises() {
+        return ResponseEntity.ok(baseExerciseService.getAllExercises());
+    }
+    
+    @GetMapping("/exercises/{id}")
+    @Operation(summary = "Get exercise by ID", description = "Retrieves a specific exercise by its ID")
+    @ApiResponse(responseCode = "200", description = "Exercise found")
+    @ApiResponse(responseCode = "404", description = "Exercise not found")
+    public ResponseEntity<BaseExercise> getExerciseById(
+            @Parameter(description = "Exercise ID") @PathVariable UUID id) {
+        
+        return baseExerciseService.getExerciseById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+    
+    @GetMapping("/exercises/muscle-group/{muscleGroup}")
+    @Operation(summary = "Get exercises by muscle group", description = "Retrieves exercises for a specific muscle group")
+    @ApiResponse(responseCode = "200", description = "Exercises retrieved successfully")
+    public ResponseEntity<List<BaseExercise>> getExercisesByMuscleGroup(
+            @Parameter(description = "Muscle group") @PathVariable String muscleGroup) {
+        
+        return ResponseEntity.ok(baseExerciseService.getExercisesByMuscleGroup(muscleGroup));
+    }
+    
+    @GetMapping("/exercises/search")
+    @Operation(summary = "Search exercises", description = "Searches exercises by name")
+    @ApiResponse(responseCode = "200", description = "Search results retrieved")
+    public ResponseEntity<List<BaseExercise>> searchExercises(
+            @Parameter(description = "Search term") @RequestParam String name) {
+        
+        return ResponseEntity.ok(baseExerciseService.searchExercisesByName(name));
+    }
+    
+    @PostMapping("/exercises")
+    @Operation(summary = "Create exercise", description = "Creates a new base exercise")
+    @ApiResponse(responseCode = "201", description = "Exercise created successfully")
+    public ResponseEntity<BaseExercise> createExercise(
+            @Parameter(description = "Exercise data") @RequestBody BaseExerciseDTO exerciseDTO) {
+        
+        BaseExercise createdExercise = baseExerciseService.createExercise(exerciseDTO);
+        return new ResponseEntity<>(createdExercise, HttpStatus.CREATED);
+    }
+    
+    @PutMapping("/exercises/{id}")
+    @Operation(summary = "Update exercise", description = "Updates an existing exercise")
+    @ApiResponse(responseCode = "200", description = "Exercise updated successfully")
+    @ApiResponse(responseCode = "404", description = "Exercise not found")
+    public ResponseEntity<BaseExercise> updateExercise(
+            @Parameter(description = "Exercise ID") @PathVariable UUID id,
+            @Parameter(description = "Updated exercise data") @RequestBody BaseExerciseDTO exerciseDTO) {
+        
+        try {
+            BaseExercise updatedExercise = baseExerciseService.updateExercise(id, exerciseDTO);
+            return ResponseEntity.ok(updatedExercise);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+    
+    @DeleteMapping("/exercises/{id}")
+    @Operation(summary = "Delete exercise", description = "Deletes an exercise (soft delete)")
+    @ApiResponse(responseCode = "204", description = "Exercise deleted successfully")
+    @ApiResponse(responseCode = "404", description = "Exercise not found")
+    public ResponseEntity<Void> deleteExercise(
+            @Parameter(description = "Exercise ID") @PathVariable UUID id) {
+        
+        try {
+            baseExerciseService.deleteExercise(id);
+            return ResponseEntity.noContent().build();
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
 
     // // -----------------------------------------------------
     // // Gym reservations endpoints

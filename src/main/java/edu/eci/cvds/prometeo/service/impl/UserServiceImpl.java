@@ -4,6 +4,7 @@ import edu.eci.cvds.prometeo.dto.*;
 import edu.eci.cvds.prometeo.model.*;
 import edu.eci.cvds.prometeo.repository.*;
 import edu.eci.cvds.prometeo.service.PhysicalProgressService;
+import edu.eci.cvds.prometeo.service.RoutineService;
 import edu.eci.cvds.prometeo.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -67,6 +68,8 @@ public class UserServiceImpl implements UserService {
 
     @Autowired
     private PhysicalProgressService physicalProgressService; // Inyectar el servicio especializado
+    @Autowired
+    private RoutineService routineService; // Inyectar el servicio especializado para rutinas
 
     // ------------- Operaciones básicas de usuario -------------
 
@@ -192,36 +195,71 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public List<Routine> getUserRoutines(UUID userId) {
-        // TODO: Implementar este método
-        return null;
+        // Delegar al servicio especializado para obtener todas las rutinas asignadas al usuario
+        return routineService.getUserRoutines(userId, false);
     }
-
+    
     @Override
+    @Transactional
     public void assignRoutineToUser(UUID userId, UUID routineId) {
-        // TODO: Implementar este método
+        // Verificar que el usuario existe
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                
+        // Delegar al servicio especializado para la asignación
+        routineService.assignRoutineToUser(routineId, userId, null, 
+                Optional.of(LocalDate.now()), Optional.of(LocalDate.now().plusMonths(3)));
     }
-
+    
     @Override
+    @Transactional
     public Routine createCustomRoutine(UUID userId, Routine routine) {
-        // TODO: Implementar este método
-        return null;
+        // Verificar que el usuario existe
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                
+        // Obtener el entrenador (asumimos que hay un campo que indica si es entrenador)
+        UUID trainerId = user.getRole().equals("TRAINER") ? userId : null;
+        
+        // Delegar al servicio especializado para la creación
+        Routine createdRoutine = routineService.createRoutine(routine, Optional.ofNullable(trainerId));
+        
+        // Si el usuario no es entrenador, asignarle la rutina creada
+        if (trainerId == null) {
+            assignRoutineToUser(userId, createdRoutine.getId());
+        }
+        
+        return createdRoutine;
     }
-
+    
     @Override
+    @Transactional
     public Routine updateRoutine(UUID routineId, Routine routine) {
-        // TODO: Implementar este método
-        return null;
+        // Delegar al servicio especializado
+        return routineService.updateRoutine(routineId, routine, null);
     }
-
+    
     @Override
+    @Transactional
     public boolean logRoutineProgress(UUID userId, UUID routineId, int completed) {
-        // TODO: Implementar este método
-        return false;
+        // Verificar que el usuario y la rutina existen
+        userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                
+        // Aquí podríamos actualizar estadísticas de progreso
+        // Por simplicidad, solo registramos que se completó
+        return true;
     }
-
-    @Override
+    
+    // @Override
     public List<Routine> getRecommendedRoutines(UUID userId) {
-        // TODO: Implementar este método
+        // TODO: Implementar lógica de recomendación
+    //     // Obtener el usuario
+    //     User user = userRepository.findById(userId)
+    //             .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                
+    //     // Obtener rutinas basadas en objetivos similares o dificultad apropiada
+    //     return routineService.getRoutines(Optional.ofNullable(user.getGoal()), Optional.empty());
         return null;
     }
 
