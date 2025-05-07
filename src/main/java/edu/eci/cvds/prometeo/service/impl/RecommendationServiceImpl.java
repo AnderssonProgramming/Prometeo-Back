@@ -38,7 +38,7 @@ public class RecommendationServiceImpl implements RecommendationService {
 
     @Override
     public List<Map<Routine, Integer>> recommendRoutines(UUID userId) {
-        User user = userRepository.findById(userId)
+        userRepository.findById(userId)
                 .orElseThrow(() -> new PrometeoExceptions(PrometeoExceptions.NO_EXISTE_USUARIO));
 
         List<Goal> goals = goalRepository.findByUserIdAndActive(userId, true);

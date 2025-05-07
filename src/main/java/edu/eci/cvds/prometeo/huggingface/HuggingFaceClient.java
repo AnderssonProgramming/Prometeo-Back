@@ -11,21 +11,19 @@ import java.nio.charset.StandardCharsets;
 
 @Service
 public class HuggingFaceClient {
-
-    @Value("${huggingface.api.token}")
-    private String huggingFaceToken;
-
-    @Value("${huggingface.model.url}")
-    private String modelUrl;
-
+    private final HuggingFaceProperties props;
     private final HttpClient httpClient = HttpClient.newHttpClient();
+
+    public HuggingFaceClient(HuggingFaceProperties props) {
+        this.props = props;
+    }
 
     public String queryModel(String input) throws Exception {
         String jsonPayload = "{\"inputs\": \"" + input + "\"}";
 
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(modelUrl))
-                .header("Authorization", "Bearer " + huggingFaceToken)
+                .uri(URI.create(props.getModelUrl()))
+                .header("Authorization", "Bearer " + props.getApiToken())
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(jsonPayload, StandardCharsets.UTF_8))
                 .build();

@@ -1,16 +1,18 @@
 package edu.eci.cvds.prometeo.model;
 
+import edu.eci.cvds.prometeo.model.base.BaseEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import java.util.UUID;
 
-@Embeddable
+@Entity
+@Table(name = "goals")
 @Getter
 @Setter
 @NoArgsConstructor
-public class Goal {
+public class Goal extends BaseEntity {
     @Column(name = "user_id", nullable = false)
     private UUID userId;
 
