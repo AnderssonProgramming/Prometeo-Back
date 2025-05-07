@@ -2,6 +2,7 @@ package edu.eci.cvds.prometeo.service.impl;
 
 import edu.eci.cvds.prometeo.dto.*;
 import edu.eci.cvds.prometeo.model.*;
+import edu.eci.cvds.prometeo.model.enums.ReservationStatus;
 import edu.eci.cvds.prometeo.repository.*;
 import edu.eci.cvds.prometeo.service.PhysicalProgressService;
 import edu.eci.cvds.prometeo.service.RoutineService;
@@ -64,7 +65,11 @@ public class UserServiceImpl implements UserService {
     private RoutineRepository routineRepository;
     @Autowired
     private EquipmentRepository equipmentRepository;
-    // Agregar otros repositorios según sea necesario
+    @Autowired
+    private GymSessionRepository gymSessionRepository;
+    @Autowired
+    private ReservationRepository reservationRepository;
+    
 
     @Autowired
     private PhysicalProgressService physicalProgressService; // Inyectar el servicio especializado
@@ -266,48 +271,230 @@ public class UserServiceImpl implements UserService {
     // ------------- Reservas de gimnasio -------------
 
     @Override
-    public UUID createGymReservation(UUID userId, LocalDate date, LocalTime startTime, LocalTime endTime,
-            Optional<List<UUID>> equipmentIds) {
-        // TODO: Implementar este método
-        return null;
+public UUID createGymReservation(UUID userId, LocalDate date, LocalTime startTime, LocalTime endTime, Optional<List<UUID>> equipmentIds) {
+    // Verificar que el usuario existe
+    User user = userRepository.findById(userId)
+            .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+    
+    // Verificar disponibilidad de cupo
+    if (!checkGymAvailability(date, startTime, endTime)) {
+        throw new RuntimeException("No hay cupos disponibles para esta sesión");
     }
-
-    @Override
-    public boolean cancelGymReservation(UUID reservationId, UUID userId, Optional<String> reason) {
-        // TODO: Implementar este método
-        return false;
+    
+    // Buscar la sesión apropiada
+    GymSession session = gymSessionRepository
+            .findBySessionDateAndStartTimeLessThanEqualAndEndTimeGreaterThanEqual(
+                date, startTime, endTime)
+            .orElseThrow(() -> new RuntimeException("No existe sesión para el horario solicitado"));
+    
+    // Verificar si hay capacidad
+    if (session.getReservedSpots() >= session.getCapacity()) {
+        throw new RuntimeException("La sesión está a máxima capacidad");
     }
-
-    @Override
-    public List<Object> getUpcomingReservations(UUID userId) {
-        // TODO: Implementar este método
-        return null;
+    
+    // Crear la reserva
+    Reservation reservation = new Reservation();
+    reservation.setUserId(userId);
+    reservation.setSessionId(session.getId());
+    reservation.setReservationDate(LocalDateTime.of(date, startTime));
+    reservation.setStatus(ReservationStatus.CONFIRMED);
+    
+    // Añadir equipos si se especificaron
+    if (equipmentIds.isPresent() && !equipmentIds.get().isEmpty()) {
+        reservation.setEquipmentIds(equipmentIds.get());
     }
+    
+    // Actualizar la capacidad de la sesión
+    session.setReservedSpots(session.getReservedSpots() + 1);
+    gymSessionRepository.save(session);
+    
+    // Guardar la reserva
+    Reservation savedReservation = reservationRepository.save(reservation);
+    
+    // Opcionalmente enviar notificación
+    // notificationService.sendNotification(...);
+    
+    return savedReservation.getId();
+}
 
-    @Override
-    public List<Object> getReservationHistory(UUID userId, Optional<LocalDate> startDate, Optional<LocalDate> endDate) {
-        // TODO: Implementar este método
-        return null;
+@Override
+public boolean cancelGymReservation(UUID reservationId, UUID userId, Optional<String> reason) {
+    // Buscar la reserva
+    Reservation reservation = reservationRepository.findById(reservationId)
+            .orElseThrow(() -> new RuntimeException("Reserva no encontrada"));
+    
+    // Verificar que el usuario es el propietario
+    if (!reservation.getUserId().equals(userId)) {
+        throw new RuntimeException("Usuario no autorizado para cancelar esta reserva");
     }
-
-    @Override
-    public boolean checkGymAvailability(LocalDate date, LocalTime startTime, LocalTime endTime) {
-        // TODO: Implementar este método
-        return false;
+    
+    // Verificar que la reserva no está ya cancelada
+    if (reservation.getStatus() == ReservationStatus.CANCELLED) {
+        throw new RuntimeException("La reserva ya está cancelada");
     }
+    
+    // Liberar el cupo en la sesión
+    GymSession session = gymSessionRepository.findById(reservation.getSessionId())
+            .orElseThrow(() -> new RuntimeException("Sesión no encontrada"));
+    
+    session.setReservedSpots(session.getReservedSpots() - 1);
+    gymSessionRepository.save(session);
+    
+    // Actualizar la reserva
+    reservation.setStatus(ReservationStatus.CANCELLED);
+    reservation.setCanceledAt(LocalDateTime.now());
+    reason.ifPresent(reservation::setCancellationReason);
+    
+    reservationRepository.save(reservation);
+    
+    return true;
+}
 
-    @Override
-    public List<Object> getAvailableTimeSlots(LocalDate date) {
-        // TODO: Implementar este método
-        return null;
+@Override
+public List<Object> getUpcomingReservations(UUID userId) {
+    // Obtener reservas futuras del usuario
+    LocalDate today = LocalDate.now();
+    List<Reservation> reservations = reservationRepository
+            .findByUserIdAndReservationDateGreaterThanEqualAndStatusOrderByReservationDateAsc(
+                userId, LocalDateTime.now(), ReservationStatus.CONFIRMED);
+    
+    return convertReservationsToMaps(reservations);
+}
+
+@Override
+public List<Object> getReservationHistory(UUID userId, Optional<LocalDate> startDate, Optional<LocalDate> endDate) {
+    LocalDate start = startDate.orElse(LocalDate.now().minusMonths(3));
+    LocalDate end = endDate.orElse(LocalDate.now());
+    
+    LocalDateTime startDateTime = start.atStartOfDay();
+    LocalDateTime endDateTime = end.atTime(23, 59, 59);
+    
+    List<Reservation> reservations = reservationRepository
+            .findByUserIdAndReservationDateBetweenOrderByReservationDateDesc(
+                userId, startDateTime, endDateTime);
+    
+    return convertReservationsToMaps(reservations);
+}
+
+@Override
+public boolean checkGymAvailability(LocalDate date, LocalTime startTime, LocalTime endTime) {
+    // Verificar si hay una sesión disponible
+    Optional<GymSession> sessionOpt = gymSessionRepository
+            .findBySessionDateAndStartTimeLessThanEqualAndEndTimeGreaterThanEqual(
+                date, startTime, endTime);
+    
+    if (sessionOpt.isEmpty()) {
+        return false; // No hay sesión para ese horario
     }
+    
+    GymSession session = sessionOpt.get();
+    return session.getReservedSpots() < session.getCapacity();
+}
 
-    @Override
-    public boolean recordGymAttendance(UUID reservationId, boolean attended, UUID trainerId) {
-        // TODO: Implementar este método
-        return false;
+@Override
+public List<Object> getAvailableTimeSlots(LocalDate date) {
+    // Obtener todas las sesiones para la fecha
+    List<GymSession> sessions = gymSessionRepository.findBySessionDateOrderByStartTime(date);
+    List<Object> availableSlots = new ArrayList<>();
+    
+    for (GymSession session : sessions) {
+        // Solo incluir sesiones que aún tengan cupo
+        if (session.getReservedSpots() < session.getCapacity()) {
+            Map<String, Object> slot = new HashMap<>();
+            slot.put("sessionId", session.getId());
+            slot.put("date", session.getSessionDate());
+            slot.put("startTime", session.getStartTime());
+            slot.put("endTime", session.getEndTime());
+            slot.put("availableSpots", session.getCapacity() - session.getReservedSpots());
+            slot.put("totalCapacity", session.getCapacity());
+            availableSlots.add(slot);
+        }
     }
+    
+    return availableSlots;
+}
 
+// Método auxiliar para convertir reservas a maps
+private List<Object> convertReservationsToMaps(List<Reservation> reservations) {
+    List<Object> result = new ArrayList<>();
+    
+    for (Reservation reservation : reservations) {
+        Map<String, Object> map = new HashMap<>();
+        map.put("id", reservation.getId());
+        map.put("date", reservation.getReservationDate().toLocalDate());
+        map.put("time", reservation.getReservationDate().toLocalTime());
+        map.put("status", reservation.getStatus());
+        
+        // Añadir detalles de la sesión
+        GymSession session = gymSessionRepository.findById(reservation.getSessionId())
+                .orElse(null);
+        
+        if (session != null) {
+            Map<String, Object> sessionDetails = new HashMap<>();
+            sessionDetails.put("id", session.getId());
+            sessionDetails.put("startTime", session.getStartTime());
+            sessionDetails.put("endTime", session.getEndTime());
+            sessionDetails.put("capacity", session.getCapacity());
+            
+            map.put("session", sessionDetails);
+        }
+        
+        result.add(map);
+    }
+    
+    return result;
+}
+
+@Override
+@Transactional
+public boolean recordGymAttendance(UUID userId, UUID reservationId, LocalDateTime attendanceTime) {
+    // Verificar que el usuario existe
+    User user = userRepository.findById(userId)
+            .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+    
+    // Buscar la reserva
+    Reservation reservation = reservationRepository.findById(reservationId)
+            .orElseThrow(() -> new RuntimeException("Reserva no encontrada"));
+    
+    // Verificar que la reserva corresponde al usuario
+    if (!reservation.getUserId().equals(userId)) {
+        throw new RuntimeException("La reserva no corresponde a este usuario");
+    }
+    
+    // Verificar que la reserva está confirmada
+    if (reservation.getStatus() != ReservationStatus.CONFIRMED) {
+        throw new RuntimeException("No se puede registrar asistencia para una reserva no confirmada");
+    }
+    
+    // Verificar que la fecha/hora de asistencia es cercana a la fecha de la reserva
+    LocalDate reservationDate = reservation.getReservationDate().toLocalDate();
+    if (!attendanceTime.toLocalDate().equals(reservationDate)) {
+        throw new RuntimeException("La fecha de asistencia no coincide con la fecha de reserva");
+    }
+    
+    // Buscar la sesión para verificar el horario
+    GymSession session = gymSessionRepository.findById(reservation.getSessionId())
+            .orElseThrow(() -> new RuntimeException("Sesión no encontrada"));
+    
+    // Verificar que la hora de asistencia está dentro del rango de la sesión (con un margen de 15 minutos)
+    LocalTime attendanceLocalTime = attendanceTime.toLocalTime();
+    LocalTime sessionStartTime = session.getStartTime().minusMinutes(15);
+    LocalTime sessionEndTime = session.getEndTime();
+    
+    if (attendanceLocalTime.isBefore(sessionStartTime) || attendanceLocalTime.isAfter(sessionEndTime)) {
+        throw new RuntimeException("La hora de asistencia está fuera del horario permitido para la sesión");
+    }
+    
+    // Actualizar la reserva para marcarla como asistida
+    reservation.setAttended(true);
+    reservation.setAttendanceTime(attendanceTime);
+    reservationRepository.save(reservation);
+    
+    // Registrar en el historial de asistencia (opcional, si tienes otra tabla para esto)
+    // attendanceHistoryRepository.save(new AttendanceHistory(userId, reservationId, attendanceTime));
+    
+    return true;
+}
     // ------------- Administración de equipos -------------
 
     @Override

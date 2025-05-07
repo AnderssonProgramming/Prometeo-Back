@@ -261,7 +261,7 @@ public interface UserService {
      * @param trainerId ID del entrenador que registra
      * @return true si se registró correctamente
      */
-    boolean recordGymAttendance(UUID reservationId, boolean attended, UUID trainerId);
+    boolean recordGymAttendance(UUID userId, UUID reservationId, LocalDateTime attendanceTime);
     
     // ------------- Administración de equipos -------------
     

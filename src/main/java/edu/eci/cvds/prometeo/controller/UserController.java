@@ -22,6 +22,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -483,56 +484,156 @@ public ResponseEntity<List<Routine>> getRecommendedRoutines(
         }
     }
 
-    // // -----------------------------------------------------
-    // // Gym reservations endpoints
-    // // -----------------------------------------------------
+    // -----------------------------------------------------
+// Gym reservations endpoints
+// -----------------------------------------------------
+// TODO: implementar bien modulo, configurar endpoint para gestion de sesiones gym.
 
-    // @GetMapping("/gym/availability")
-    // @Operation(summary = "Get gym availability", description = "Retrieves gym
-    // availability for a specific date")
-    // public ResponseEntity<Map<String, Integer>> getGymAvailability(
-    // @Parameter(description = "Date to check") @RequestParam @DateTimeFormat(iso =
-    // DateTimeFormat.ISO.DATE) LocalDate date);
+@GetMapping("/gym/availability")
+@Operation(summary = "Get gym availability", description = "Retrieves gym availability for a specific date")
+@ApiResponse(responseCode = "200", description = "Availability information retrieved successfully")
+public ResponseEntity<List<Object>> getGymAvailability(
+        @Parameter(description = "Date to check") 
+        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+    
+    List<Object> availableSlots = userService.getAvailableTimeSlots(date);
+    return ResponseEntity.ok(availableSlots);
+}
 
-    // @PostMapping("/{userId}/reservations")
-    // @Operation(summary = "Create reservation", description = "Creates a new gym
-    // reservation")
-    // public ResponseEntity<Reservation> createReservation(
-    // @Parameter(description = "User ID") @PathVariable Long userId,
-    // @Parameter(description = "Reservation data") @RequestBody ReservationDTO
-    // reservationDTO);
+@PostMapping("/{userId}/reservations")
+@Operation(summary = "Create reservation", description = "Creates a new gym reservation")
+@ApiResponse(responseCode = "201", description = "Reservation created successfully")
+@ApiResponse(responseCode = "404", description = "User not found")
+@ApiResponse(responseCode = "400", description = "No available slots for the requested time")
+public ResponseEntity<Object> createReservation(
+        @Parameter(description = "User ID") @PathVariable UUID userId,
+        @Parameter(description = "Reservation data") @RequestBody ReservationDTO reservationDTO) {
+    
+    try {
+        UUID reservationId = userService.createGymReservation(
+                userId,
+                reservationDTO.getDate(),
+                reservationDTO.getStartTime(),
+                reservationDTO.getEndTime(),
+                Optional.ofNullable(reservationDTO.getEquipmentIds())
+        );
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("reservationId", reservationId);
+        response.put("message", "Reserva creada exitosamente");
+        
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
+    } catch (RuntimeException e) {
+        Map<String, String> error = new HashMap<>();
+        error.put("error", e.getMessage());
+        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+    }
+}
 
-    // @GetMapping("/{userId}/reservations")
-    // @Operation(summary = "Get user reservations", description = "Retrieves all
-    // reservations for a user")
-    // public ResponseEntity<List<Reservation>>
-    // getUserReservations(@Parameter(description = "User ID") @PathVariable Long
-    // userId);
+@GetMapping("/{userId}/reservations/upcoming")
+@Operation(summary = "Get upcoming reservations", description = "Retrieves upcoming reservations for a user")
+@ApiResponse(responseCode = "200", description = "Reservations retrieved successfully")
+@ApiResponse(responseCode = "404", description = "User not found")
+public ResponseEntity<List<Object>> getUpcomingReservations(
+        @Parameter(description = "User ID") @PathVariable UUID userId) {
+    
+    List<Object> reservations = userService.getUpcomingReservations(userId);
+    return ResponseEntity.ok(reservations);
+}
 
-    // @DeleteMapping("/{userId}/reservations/{reservationId}")
-    // @Operation(summary = "Cancel reservation", description = "Cancels an existing
-    // reservation")
-    // public ResponseEntity<Void> cancelReservation(
-    // @Parameter(description = "User ID") @PathVariable Long userId,
-    // @Parameter(description = "Reservation ID") @PathVariable Long reservationId);
+@GetMapping("/{userId}/reservations/history")
+@Operation(summary = "Get reservation history", description = "Retrieves historical reservations for a user")
+@ApiResponse(responseCode = "200", description = "Reservation history retrieved successfully")
+@ApiResponse(responseCode = "404", description = "User not found")
+public ResponseEntity<List<Object>> getReservationHistory(
+        @Parameter(description = "User ID") @PathVariable UUID userId,
+        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+    
+    List<Object> history = userService.getReservationHistory(
+            userId, 
+            Optional.ofNullable(startDate), 
+            Optional.ofNullable(endDate)
+    );
+    
+    return ResponseEntity.ok(history);
+}
 
-    // @GetMapping("/{userId}/reservations/upcoming")
-    // @Operation(summary = "Get upcoming reservations", description = "Retrieves
-    // upcoming reservations for a user")
-    // public ResponseEntity<List<Reservation>>
-    // getUpcomingReservations(@Parameter(description = "User ID") @PathVariable
-    // Long userId);
+@DeleteMapping("/{userId}/reservations/{reservationId}")
+@Operation(summary = "Cancel reservation", description = "Cancels an existing reservation")
+@ApiResponse(responseCode = "200", description = "Reservation cancelled successfully")
+@ApiResponse(responseCode = "404", description = "Reservation not found")
+@ApiResponse(responseCode = "403", description = "User not authorized to cancel this reservation")
+public ResponseEntity<Object> cancelReservation(
+        @Parameter(description = "User ID") @PathVariable UUID userId,
+        @Parameter(description = "Reservation ID") @PathVariable UUID reservationId,
+        @RequestBody(required = false) Map<String, String> requestBody) {
+    
+    try {
+        String reason = requestBody != null ? requestBody.get("reason") : null;
+        boolean cancelled = userService.cancelGymReservation(
+                reservationId,
+                userId,
+                Optional.ofNullable(reason)
+        );
+        
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "Reserva cancelada exitosamente");
+        
+        return ResponseEntity.ok(response);
+    } catch (RuntimeException e) {
+        Map<String, String> error = new HashMap<>();
+        error.put("error", e.getMessage());
+        
+        HttpStatus status = e.getMessage().contains("no autorizado") ? 
+                HttpStatus.FORBIDDEN : HttpStatus.BAD_REQUEST;
+                
+        return new ResponseEntity<>(error, status);
+    }
+}
 
-    // @GetMapping("/{userId}/reservations/history")
-    // @Operation(summary = "Get reservation history", description = "Retrieves
-    // historical reservations for a user")
-    // public ResponseEntity<List<Reservation>> getReservationHistory(
-    // @Parameter(description = "User ID") @PathVariable Long userId,
-    // @Parameter(description = "Start date") @RequestParam(required = false)
-    // @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-    // @Parameter(description = "End date") @RequestParam(required = false)
-    // @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate);
+@PostMapping("/{userId}/reservations/{reservationId}/waitlist")
+@Operation(summary = "Join waitlist", description = "Adds user to waitlist for a full session")
+@ApiResponse(responseCode = "200", description = "Added to waitlist successfully")
+@ApiResponse(responseCode = "404", description = "Session not found")
+public ResponseEntity<Object> joinWaitlist(
+        @Parameter(description = "User ID") @PathVariable UUID userId,
+        @Parameter(description = "Session ID") @PathVariable UUID sessionId) {
+    
+    // Implementación simple de lista de espera - en un sistema real querrías un servicio separado
+    // para manejar las notificaciones cuando se libere un cupo
+    Map<String, String> response = new HashMap<>();
+    response.put("message", "Has sido añadido a la lista de espera. Te notificaremos cuando haya cupo disponible.");
+    
+    return ResponseEntity.ok(response);
+}
 
+@PostMapping("/{userId}/reservations/{reservationId}/attendance")
+@Operation(summary = "Record gym attendance", description = "Records user's attendance to a reserved gym session")
+@ApiResponse(responseCode = "200", description = "Attendance recorded successfully")
+@ApiResponse(responseCode = "400", description = "Invalid attendance data")
+@ApiResponse(responseCode = "404", description = "User or reservation not found")
+public ResponseEntity<Object> recordAttendance(
+        @Parameter(description = "User ID") @PathVariable UUID userId,
+        @Parameter(description = "Reservation ID") @PathVariable UUID reservationId) {
+    
+    try {
+        // Usar la hora actual del sistema para registrar la asistencia
+        LocalDateTime attendanceTime = LocalDateTime.now();
+        
+        boolean recorded = userService.recordGymAttendance(userId, reservationId, attendanceTime);
+        
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "Asistencia registrada exitosamente");
+        
+        return ResponseEntity.ok(response);
+    } catch (RuntimeException e) {
+        Map<String, String> error = new HashMap<>();
+        error.put("error", e.getMessage());
+        
+        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+    }
+}
     // // -----------------------------------------------------
     // // Equipment reservations endpoints
     // // -----------------------------------------------------

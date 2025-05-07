@@ -8,6 +8,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.UUID;
@@ -15,6 +16,13 @@ import java.util.UUID;
 @Repository
 public interface ReservationRepository extends JpaRepository<Reservation, UUID> {
     
+    List<Reservation> findByUserIdAndReservationDateGreaterThanEqualAndStatusOrderByReservationDateAsc(
+            UUID userId, LocalDateTime date, ReservationStatus status);
+            
+    List<Reservation> findByUserIdAndReservationDateBetweenOrderByReservationDateDesc(
+            UUID userId, LocalDateTime startDate, LocalDateTime endDate);
+            
+    List<Reservation> findBySessionId(UUID sessionId);
 //     // Existing methods
 //     List<Reservation> findByUserId(UUID userId);
     
