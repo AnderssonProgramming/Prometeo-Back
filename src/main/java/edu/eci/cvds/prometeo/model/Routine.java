@@ -45,15 +45,10 @@ public class Routine extends AuditableEntity {
     public void addExercise(RoutineExercise exercise) {
         exercises.add(exercise);
     }
-    // TODO: Fix lombok issue with @Setter and @Getter for exercises
+
     public void removeExercise(UUID exerciseId) {
         exercises.removeIf(exercise -> {
-            // Get the ID directly from the base class or through inheritance
-            UUID id = exercise.getId(); // This should work if properly inherited
-            
-            // If still having issues, you could try accessing the field if it's visible:
-            // UUID id = ((BaseEntity)exercise).getId();
-            
+            UUID id = exercise.getId();
             return exerciseId.equals(id);
         });
     }
@@ -66,17 +61,25 @@ public class Routine extends AuditableEntity {
     }
 
     public boolean isAppropriateFor(PhysicalProgress progress) {
-        // Implementación simplificada
         return true;
     }
 
+    private UUID id;
 
-    public void setDifficulty(String difficulty) {
-        this.difficulty = difficulty;
+    public UUID getId() {
+        return id;
+    }
+
+    public void setId(UUID id) {
+        this.id = id;
     }
 
     public String getDifficulty() {
         return difficulty;
+    }
+
+    public void setDifficulty(String difficulty) {
+        this.difficulty = difficulty;
     }
 
     public String getName() {

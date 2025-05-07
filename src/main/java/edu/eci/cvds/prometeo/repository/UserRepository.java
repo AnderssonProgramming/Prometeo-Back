@@ -12,23 +12,18 @@ import java.util.UUID;
 @Repository
 public interface UserRepository extends JpaRepository<User, UUID> {
     
+    // Optional<User> getUserById(UUID id);
+    // Optional<User> getUser(String username);
+    // TODO: To see if this is implicit
+    List<User> findAll();
+    List<User> findByRole(String role);
+    Optional<User> findByInstitutionalId(String institutionalId);
+
     /**
-     * Find user by email
+     * Finds all users assigned to a specific trainer.
+     * 
+     * @param trainerId the UUID of the trainer
+     * @return a list of users associated with the given trainer
      */
-    Optional<User> findByEmail(String email);
-    
-    /**
-     * Find users by trainer status
-     */
-    List<User> findByIsTrainer(boolean isTrainer);
-    
-    /**
-     * Find users by program code
-     */
-    List<User> findByProgramCode(String programCode);
-    
-    /**
-     * Check if a user exists by email
-     */
-    boolean existsByEmail(String email);
+    // List<User> findByTrainerId(UUID trainerId);
 }

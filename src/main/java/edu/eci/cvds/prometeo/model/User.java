@@ -4,28 +4,24 @@ import jakarta.persistence.*;
 import java.time.LocalDate;
 import java.util.UUID;
 
+import edu.eci.cvds.prometeo.model.base.BaseEntity;
+
 /**
  * Entity representing a user in the system
  */
 @Entity
 @Table(name = "users")
-public class User {
+public class User extends BaseEntity {
     
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private UUID id;
     
-    @Column(name = "first_name", nullable = false)
-    private String firstName;
-    
-    @Column(name = "last_name", nullable = false)
-    private String lastName;
-    
-    @Column(name = "email", nullable = false, unique = true)
-    private String email;
-    
-    @Column(name = "birth_date")
-    private LocalDate birthDate;
+    @Column(name = "instutional_id", unique = true, nullable = false)
+    private String institutionalId;
+
+    @Column(name = "name", nullable = false)
+    private String name;
     
     @Column(name = "weight")
     private Double weight;
@@ -34,10 +30,8 @@ public class User {
     private Double height;
     
     @Column(name = "is_trainer")
-    private Boolean isTrainer;
+    private String role;
     
-    @Column(name = "program_code")
-    private String programCode;
     
     // Getters and setters
     public UUID getId() {
@@ -48,36 +42,12 @@ public class User {
         this.id = id;
     }
 
-    public String getFirstName() {
-        return firstName;
+    public String getName() {
+        return name;
     }
 
-    public void setFirstName(String firstName) {
-        this.firstName = firstName;
-    }
-
-    public String getLastName() {
-        return lastName;
-    }
-
-    public void setLastName(String lastName) {
-        this.lastName = lastName;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    public LocalDate getBirthDate() {
-        return birthDate;
-    }
-
-    public void setBirthDate(LocalDate birthDate) {
-        this.birthDate = birthDate;
+    public void setName(String name) {
+        this.name = name;
     }
 
     public Double getWeight() {
@@ -96,28 +66,20 @@ public class User {
         this.height = height;
     }
 
-    public Boolean getIsTrainer() {
-        return isTrainer;
+    public String getRole() {
+        return role;
     }
 
-    public void setIsTrainer(Boolean isTrainer) {
-        this.isTrainer = isTrainer;
+    public void setRole(String role) {
+        this.role = role;
     }
 
-    public String getProgramCode() {
-        return programCode;
+    public String getInstitutionalId() {
+        return institutionalId;
     }
 
-    public void setProgramCode(String programCode) {
-        this.programCode = programCode;
+    public void setInstitutionalId(String institutionalId) {
+        this.institutionalId = institutionalId;
     }
-    
-    // Utility methods
-    public String getFullName() {
-        return firstName + " " + lastName;
-    }
-    
-    public boolean isTrainer() {
-        return isTrainer != null && isTrainer;
-    }
+
 }

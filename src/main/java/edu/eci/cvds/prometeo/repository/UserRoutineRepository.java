@@ -11,14 +11,14 @@ import java.util.UUID;
 
 @Repository
 public interface UserRoutineRepository extends JpaRepository<UserRoutine, UUID> {
-    
+
     List<UserRoutine> findByUserId(UUID userId);
-    
+
     List<UserRoutine> findByUserIdAndIsActiveTrue(UUID userId);
-    
+
     List<UserRoutine> findByRoutineId(UUID routineId);
-    
+
     Optional<UserRoutine> findByUserIdAndRoutineId(UUID userId, UUID routineId);
-    
+
     List<UserRoutine> findByEndDateBefore(LocalDate date);
 }
