@@ -21,7 +21,8 @@ import java.util.*;
  * relacionadas con usuarios, seguimiento físico, rutinas y reservas
  */
 /**
- * Implementation of the UserService interface that provides comprehensive functionality
+ * Implementation of the UserService interface that provides comprehensive
+ * functionality
  * for managing users in the fitness system.
  * 
  * This service handles multiple aspects of user management including:
@@ -32,9 +33,11 @@ import java.util.*;
  * - Fitness equipment administration
  * - Statistical reporting and analytics
  * 
- * The implementation relies on several repositories to interact with the database:
+ * The implementation relies on several repositories to interact with the
+ * database:
  * - UserRepository: For core user data operations
- * - PhysicalProgressRepository: For storing and retrieving physical measurements and progress
+ * - PhysicalProgressRepository: For storing and retrieving physical
+ * measurements and progress
  * - RoutineRepository: For managing workout routines
  * - EquipmentRepository: For handling gym equipment information
  * 
@@ -65,19 +68,18 @@ public class UserServiceImpl implements UserService {
     @Autowired
     private PhysicalProgressService physicalProgressService; // Inyectar el servicio especializado
 
-
     // ------------- Operaciones básicas de usuario -------------
 
     @Override
     public User getUserById(String institutionalId) {
         return userRepository.findByInstitutionalId(institutionalId)
-            .orElseThrow(() -> new RuntimeException("User not found with id: " + institutionalId));
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + institutionalId));
     }
 
     @Override
     public User getUserByInstitutionalId(String institutionalId) {
         return userRepository.findByInstitutionalId(institutionalId)
-            .orElseThrow(() -> new RuntimeException("User not found with institutional id: " + institutionalId));
+                .orElseThrow(() -> new RuntimeException("User not found with institutional id: " + institutionalId));
     }
 
     @Override
@@ -93,7 +95,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public User updateUser(String institutionalId, UserDTO user) {
         User existingUser = userRepository.findByInstitutionalId(institutionalId)
-            .orElseThrow(() -> new RuntimeException("User not found with id: " + institutionalId));
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + institutionalId));
         // Actualizar los campos necesarios
         existingUser.setName(user.getName());
         existingUser.setWeight(user.getWeight());
@@ -103,7 +105,6 @@ public class UserServiceImpl implements UserService {
         userRepository.save(existingUser);
         return existingUser;
     }
-        
 
     @Override
     public User createUser(UserDTO userDTO) {
@@ -114,7 +115,7 @@ public class UserServiceImpl implements UserService {
         newUser.setRole(userDTO.getRole());
         newUser.setWeight(userDTO.getWeight());
         newUser.setHeight(userDTO.getHeight());
-        
+
         // Save the new user to the database
         return userRepository.save(newUser);
     }
@@ -122,86 +123,64 @@ public class UserServiceImpl implements UserService {
     @Override
     public User deleteUser(String institutionalId) {
         User user = userRepository.findByInstitutionalId(institutionalId)
-            .orElseThrow(() -> new RuntimeException("User not found with id: " + institutionalId));
-        
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + institutionalId));
+
         // Opcional: puedes realizar verificaciones adicionales antes de eliminar
         // Por ejemplo, verificar que el usuario no tiene reservas activas
-        
+
         // Eliminar el usuario
         userRepository.delete(user);
-        
+
         return user; // Devuelve el usuario eliminado
     }
-
-    // TODO: Validar si un entrenador debe ser asignado para cada estudiante o solo por sesión de gym. 
-    // @Override
-    // public List<User> getTrainerAssignedUsers() {
-    //     // TODO: Implementar este método
-    //     // Get the current authenticated user (trainer)
-    //     String trainerInstitutionalId = SecurityContextHolder.getContext().getAuthentication().getName();
-    //     User trainer = userRepository.findByInstitutionalId(trainerInstitutionalId)
-    //         .orElseThrow(() -> new RuntimeException("Trainer not found"));
-
-    //     // Verify that the user is actually a trainer
-    //     if (!"TRAINER".equals(trainer.getRole())) {
-    //         throw new RuntimeException("Current user is not a trainer");
-    //     }
-
-    //     // Fetch all users assigned to this trainer
-    //     return userRepository.findByTrainerId(trainer.getId());
-    // }
-
-    // @Override
-    // public void assignUserToTrainer(Long userId, Long trainerId) {
-    //     // TODO: Implementar este método
-    // }
 
     // ------------- Seguimiento físico -------------
 
     @Override
-@Transactional
-public PhysicalProgress recordPhysicalMeasurement(UUID userId, PhysicalProgress progress) {
-    // Verifica que el usuario existe
-    User user = userRepository.findById(userId)
-            .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-    
-    // Delega al servicio especializado
-    return physicalProgressService.recordMeasurement(userId, progress);
-}
+    @Transactional
+    public PhysicalProgress recordPhysicalMeasurement(UUID userId, PhysicalProgress progress) {
+        // Verifica que el usuario existe
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-@Override
-public List<PhysicalProgress> getPhysicalMeasurementHistory(UUID userId, Optional<LocalDate> startDate, Optional<LocalDate> endDate) {
-    // Verifica que el usuario existe
-    userRepository.findById(userId)
-            .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-    
-    // Delega al servicio especializado
-    return physicalProgressService.getMeasurementHistory(userId, startDate, endDate);
-}
+        // Delega al servicio especializado
+        return physicalProgressService.recordMeasurement(userId, progress);
+    }
 
-@Override
-public Optional<PhysicalProgress> getLatestPhysicalMeasurement(UUID userId) {
-    // Delega al servicio especializado
-    return physicalProgressService.getLatestMeasurement(userId);
-}
+    @Override
+    public List<PhysicalProgress> getPhysicalMeasurementHistory(UUID userId, Optional<LocalDate> startDate,
+            Optional<LocalDate> endDate) {
+        // Verifica que el usuario existe
+        userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-@Override
-public PhysicalProgress updatePhysicalMeasurement(UUID progressId, BodyMeasurements measurements) {
-    // Delega al servicio especializado
-    return physicalProgressService.updateMeasurement(progressId, measurements);
-}
+        // Delega al servicio especializado
+        return physicalProgressService.getMeasurementHistory(userId, startDate, endDate);
+    }
 
-@Override
-public PhysicalProgress setPhysicalGoal(UUID userId, String goal) {
-    // Delega al servicio especializado
-    return physicalProgressService.setGoal(userId, goal);
-}
+    @Override
+    public Optional<PhysicalProgress> getLatestPhysicalMeasurement(UUID userId) {
+        // Delega al servicio especializado
+        return physicalProgressService.getLatestMeasurement(userId);
+    }
 
-@Override
-public Map<String, Double> calculatePhysicalProgressMetrics(UUID userId, int months) {
-    // Delega al servicio especializado
-    return physicalProgressService.calculateProgressMetrics(userId, months);
-}
+    @Override
+    public PhysicalProgress updatePhysicalMeasurement(UUID progressId, BodyMeasurements measurements) {
+        // Delega al servicio especializado
+        return physicalProgressService.updateMeasurement(progressId, measurements);
+    }
+
+    @Override
+    public PhysicalProgress setPhysicalGoal(UUID userId, String goal) {
+        // Delega al servicio especializado
+        return physicalProgressService.setGoal(userId, goal);
+    }
+
+    @Override
+    public Map<String, Double> calculatePhysicalProgressMetrics(UUID userId, int months) {
+        // Delega al servicio especializado
+        return physicalProgressService.calculateProgressMetrics(userId, months);
+    }
 
     // ------------- Gestión de rutinas -------------
 
@@ -243,7 +222,8 @@ public Map<String, Double> calculatePhysicalProgressMetrics(UUID userId, int mon
     // ------------- Reservas de gimnasio -------------
 
     @Override
-    public UUID createGymReservation(UUID userId, LocalDate date, LocalTime startTime, LocalTime endTime, Optional<List<UUID>> equipmentIds) {
+    public UUID createGymReservation(UUID userId, LocalDate date, LocalTime startTime, LocalTime endTime,
+            Optional<List<UUID>> equipmentIds) {
         // TODO: Implementar este método
         return null;
     }
