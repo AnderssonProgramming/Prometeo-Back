@@ -60,7 +60,7 @@ public class UserController {
 @Operation(summary = "Get user by ID", description = "Retrieves a user by their unique identifier")
 @ApiResponse(responseCode = "200", description = "User found", content = @Content(schema = @Schema(implementation = User.class)))
 @ApiResponse(responseCode = "404", description = "User not found")
-public ResponseEntity<User> getUserById(@Parameter(description = "User ID") @PathVariable UUID id) {
+public ResponseEntity<User> getUserById(@Parameter(description = "User ID") @PathVariable String id) {
     return ResponseEntity.ok(userService.getUserById(id));
 }
 
@@ -93,7 +93,7 @@ public ResponseEntity<List<User>> getUsersByRole(
 @ApiResponse(responseCode = "200", description = "User updated successfully")
 @ApiResponse(responseCode = "404", description = "User not found")
 public ResponseEntity<User> updateUser(
-        @Parameter(description = "User ID") @PathVariable UUID id,
+        @Parameter(description = "User ID") @PathVariable String id,
         @Parameter(description = "User data") @RequestBody UserDTO userDTO) {
     return ResponseEntity.ok(userService.updateUser(id, userDTO));
 }
@@ -114,8 +114,8 @@ public ResponseEntity<User> createUser(
 @ApiResponse(responseCode = "404", description = "User not found")
 @PreAuthorize("hasRole('ADMIN')")
 public ResponseEntity<User> deleteUser(
-        @Parameter(description = "User ID") @PathVariable UUID id) {
-    return ResponseEntity.ok(userService.deleteUser(id));
+        @Parameter(description = "User ID") @PathVariable String InstitutionalId) {
+    return ResponseEntity.ok(userService.deleteUser(InstitutionalId));
 }
 
     // // -----------------------------------------------------

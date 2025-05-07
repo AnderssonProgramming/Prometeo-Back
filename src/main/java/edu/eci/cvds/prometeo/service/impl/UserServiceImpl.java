@@ -64,9 +64,9 @@ public class UserServiceImpl implements UserService {
     // ------------- Operaciones básicas de usuario -------------
 
     @Override
-    public User getUserById(UUID id) {
-        return userRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
+    public User getUserById(String institutionalId) {
+        return userRepository.findByInstitutionalId(institutionalId)
+            .orElseThrow(() -> new RuntimeException("User not found with id: " + institutionalId));
     }
 
     @Override
@@ -86,9 +86,9 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public User updateUser(UUID id, UserDTO user) {
-        User existingUser = userRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
+    public User updateUser(String institutionalId, UserDTO user) {
+        User existingUser = userRepository.findByInstitutionalId(institutionalId)
+            .orElseThrow(() -> new RuntimeException("User not found with id: " + institutionalId));
         // Actualizar los campos necesarios
         existingUser.setName(user.getName());
         existingUser.setWeight(user.getWeight());
@@ -115,9 +115,9 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public User deleteUser(UUID id) {
-        User user = userRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
+    public User deleteUser(String institutionalId) {
+        User user = userRepository.findByInstitutionalId(institutionalId)
+            .orElseThrow(() -> new RuntimeException("User not found with id: " + institutionalId));
         
         // Opcional: puedes realizar verificaciones adicionales antes de eliminar
         // Por ejemplo, verificar que el usuario no tiene reservas activas

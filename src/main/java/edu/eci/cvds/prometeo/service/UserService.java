@@ -44,7 +44,7 @@ public interface UserService {
      * @param id ID del usuario
      * @return Entidad de usuario
      */
-    User getUserById(UUID id);
+    User getUserById(String institutionalId);
 
     /**
      * Obtener usuario por ID institucional
@@ -79,14 +79,14 @@ public interface UserService {
      * @param profileDTO datos de perfil a actualizar
      * @return perfil actualizado
      */
-    User updateUser(UUID id, UserDTO user);
+    User updateUser(String institutionalId, UserDTO user);
     
     /**
      * Eliminar usuario
      * @param id ID del usuario
      * @return usuario eliminado
      */
-    User deleteUser(UUID id);
+    User deleteUser(String InstitutionalId);
     /**
      * Obtener lista de usuarios asignados al entrenador actual
      * @return lista de perfiles de usuario
