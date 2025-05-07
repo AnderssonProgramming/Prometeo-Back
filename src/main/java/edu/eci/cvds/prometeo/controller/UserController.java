@@ -150,6 +150,7 @@ public class UserController {
 
         progress.setMeasurements(measurements);
         progress.setPhysicalGoal(progressDTO.getPhysicalGoal());
+        progress.setTrainerObservations(progressDTO.getTrainerObservations());
 
         PhysicalProgress savedProgress = userService.recordPhysicalMeasurement(userId, progress);
         return new ResponseEntity<>(savedProgress, HttpStatus.CREATED);

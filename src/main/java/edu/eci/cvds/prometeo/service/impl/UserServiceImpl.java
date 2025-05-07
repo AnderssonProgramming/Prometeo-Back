@@ -142,7 +142,13 @@ public class UserServiceImpl implements UserService {
         // Verifica que el usuario existe
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-
+        
+        // Opcionalmente obtener la rutina activa del usuario
+        Routine activeRoutine = routineRepository.findCurrentRoutineByUserId(userId).orElse(null);
+        if (activeRoutine != null) {
+            progress.setActiveRoutine(activeRoutine);
+        }
+        
         // Delega al servicio especializado
         return physicalProgressService.recordMeasurement(userId, progress);
     }
