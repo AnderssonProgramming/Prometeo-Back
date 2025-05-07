@@ -44,14 +44,34 @@ public interface UserService {
      * @param id ID del usuario
      * @return Entidad de usuario
      */
-    User getUserById(Long id);
+    User getUserById(UUID id);
+
+    /**
+     * Obtener usuario por ID institucional
+     * @param institutionalId ID institucional del usuario
+     * @return Entidad de usuario
+     */
+    User getUserByInstitutionalId(String institutionalId);
+
+    /**
+     * Obtener todos los usuarios
+     * @return lista de todos los usuarios registrados
+     */
+    List<User> getAllUsers();
     
     /**
-     * Obtener información de perfil de usuario
-     * @param id ID del usuario
-     * @return DTO de perfil de usuario
+     * Obtener usuarios por rol
+     * @param role rol de usuario a filtrar
+     * @return lista de usuarios con el rol especificado
      */
-    User getUser(Long id);
+    List<User> getUsersByRole(String role);
+
+    /**
+     * Crear un nuevo usuario
+     * @param userDTO datos del usuario a crear
+     * @return nuevo usuario creado
+     */
+    User createUser(UserDTO userDTO);
     
     /**
      * Actualizar información de perfil de usuario
@@ -59,20 +79,28 @@ public interface UserService {
      * @param profileDTO datos de perfil a actualizar
      * @return perfil actualizado
      */
-    User updateUser(Long id, User user);
+    User updateUser(UUID id, UserDTO user);
     
+    /**
+     * Eliminar usuario
+     * @param id ID del usuario
+     * @return usuario eliminado
+     */
+    User deleteUser(UUID id);
     /**
      * Obtener lista de usuarios asignados al entrenador actual
      * @return lista de perfiles de usuario
      */
-    List<User> getTrainerAssignedUsers();
+
+     // TODO: Validar si la asignación de entrenadores es por sesión de gym
+    // List<User> getTrainerAssignedUsers();
     
-    /**
-     * Asignar un usuario a un entrenador
-     * @param userId ID del usuario
-     * @param trainerId ID del entrenador
-     */
-    void assignUserToTrainer(Long userId, Long trainerId);
+    // /**
+    //  * Asignar un usuario a un entrenador
+    //  * @param userId ID del usuario
+    //  * @param trainerId ID del entrenador
+    //  */
+    // void assignUserToTrainer(Long userId, Long trainerId);
     
     // ------------- Seguimiento físico -------------
     

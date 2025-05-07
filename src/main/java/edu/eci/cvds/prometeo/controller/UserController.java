@@ -59,25 +59,67 @@ public class UserController {
     // User profile endpoints
     // -----------------------------------------------------
     
-    // @GetMapping("/{id}")
-    // @Operation(summary = "Get user by ID", description = "Retrieves a user by their unique identifier")
-    // @ApiResponse(responseCode = "200", description = "User found", content = @Content(schema = @Schema(implementation = User.class)))
-    // @ApiResponse(responseCode = "404", description = "User not found")
-    // public ResponseEntity<User> getUserById(@Parameter(description = "User ID") @PathVariable Long id);
+@GetMapping("/{id}")
+@Operation(summary = "Get user by ID", description = "Retrieves a user by their unique identifier")
+@ApiResponse(responseCode = "200", description = "User found", content = @Content(schema = @Schema(implementation = User.class)))
+@ApiResponse(responseCode = "404", description = "User not found")
+public ResponseEntity<User> getUserById(@Parameter(description = "User ID") @PathVariable UUID id) {
+    return ResponseEntity.ok(userService.getUserById(id));
+}
 
-    // @GetMapping("/profile/{id}")
-    // @Operation(summary = "Get user profile", description = "Retrieves a user's profile information")
-    // @ApiResponse(responseCode = "200", description = "Profile found", content = @Content(schema = @Schema(implementation = UserProfileDTO.class)))
-    // @ApiResponse(responseCode = "404", description = "Profile not found")
-    // public ResponseEntity<UserProfileDTO> getUserProfile(@Parameter(description = "User ID") @PathVariable Long id);
+@GetMapping("/by-institutional-id/{institutionalId}")
+@Operation(summary = "Get user by institutional ID", description = "Retrieves a user by their institutional identifier")
+@ApiResponse(responseCode = "200", description = "User found", content = @Content(schema = @Schema(implementation = User.class)))
+@ApiResponse(responseCode = "404", description = "User not found")
+public ResponseEntity<User> getUserByInstitutionalId(
+        @Parameter(description = "Institutional ID") @PathVariable String institutionalId) {
+    return ResponseEntity.ok(userService.getUserByInstitutionalId(institutionalId));
+}
 
-    // @PutMapping("/{id}/profile")
-    // @Operation(summary = "Update user profile", description = "Updates a user's profile information")
-    // @ApiResponse(responseCode = "200", description = "Profile updated successfully")
-    // @ApiResponse(responseCode = "404", description = "User not found")
-    // public ResponseEntity<UserProfileDTO> updateUserProfile(
-    //         @Parameter(description = "User ID") @PathVariable Long id,
-    //         @Parameter(description = "Profile data") @RequestBody UserProfileUpdateDTO profileDTO);
+@GetMapping
+@Operation(summary = "Get all users", description = "Retrieves all users in the system")
+@ApiResponse(responseCode = "200", description = "Users retrieved successfully")
+public ResponseEntity<List<User>> getAllUsers() {
+    return ResponseEntity.ok(userService.getAllUsers());
+}
+
+@GetMapping("/by-role/{role}")
+@Operation(summary = "Get users by role", description = "Retrieves all users with a specific role")
+@ApiResponse(responseCode = "200", description = "Users retrieved successfully")
+public ResponseEntity<List<User>> getUsersByRole(
+        @Parameter(description = "Role name") @PathVariable String role) {
+    return ResponseEntity.ok(userService.getUsersByRole(role));
+}
+
+@PutMapping("/{id}")
+@Operation(summary = "Update user", description = "Updates a user's basic information")
+@ApiResponse(responseCode = "200", description = "User updated successfully")
+@ApiResponse(responseCode = "404", description = "User not found")
+public ResponseEntity<User> updateUser(
+        @Parameter(description = "User ID") @PathVariable UUID id,
+        @Parameter(description = "User data") @RequestBody UserDTO userDTO) {
+    return ResponseEntity.ok(userService.updateUser(id, userDTO));
+}
+
+@PostMapping
+@Operation(summary = "Create user", description = "Creates a new user in the system")
+@ApiResponse(responseCode = "201", description = "User created successfully", 
+    content = @Content(schema = @Schema(implementation = User.class)))
+public ResponseEntity<User> createUser(
+        @Parameter(description = "User data") @RequestBody UserDTO userDTO) {
+    User createdUser = userService.createUser(userDTO);
+    return new ResponseEntity<>(createdUser, HttpStatus.CREATED);
+}
+
+@DeleteMapping("/{id}")
+@Operation(summary = "Delete user", description = "Deletes a user from the system")
+@ApiResponse(responseCode = "200", description = "User deleted successfully")
+@ApiResponse(responseCode = "404", description = "User not found")
+@PreAuthorize("hasRole('ADMIN')")
+public ResponseEntity<User> deleteUser(
+        @Parameter(description = "User ID") @PathVariable UUID id) {
+    return ResponseEntity.ok(userService.deleteUser(id));
+}
 
     // // -----------------------------------------------------
     // // Physical tracking endpoints
