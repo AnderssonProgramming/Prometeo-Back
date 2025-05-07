@@ -50,54 +50,106 @@ public class UserServiceImpl implements UserService {
      * providing methods for CRUD operations and custom queries on users.
      * It is injected as a dependency and marked as final to ensure immutability.
      */
-    private final UserRepository userRepository;
-    private final PhysicalProgressRepository physicalProgressRepository;
-    private final RoutineRepository routineRepository;
-    private final EquipmentRepository equipmentRepository;
-    // Agregar otros repositorios según sea necesario
 
     @Autowired
-    public UserServiceImpl(
-            UserRepository userRepository,
-            PhysicalProgressRepository physicalProgressRepository,
-            RoutineRepository routineRepository,
-            EquipmentRepository equipmentRepository) {
-        this.userRepository = userRepository;
-        this.physicalProgressRepository = physicalProgressRepository;
-        this.routineRepository = routineRepository;
-        this.equipmentRepository = equipmentRepository;
-    }
+    private UserRepository userRepository;
+    @Autowired
+    private PhysicalProgressRepository physicalProgressRepository;
+    @Autowired
+    private RoutineRepository routineRepository;
+    @Autowired
+    private EquipmentRepository equipmentRepository;
+    // Agregar otros repositorios según sea necesario
 
     // ------------- Operaciones básicas de usuario -------------
 
     @Override
-    public User getUserById(Long id) {
-        // TODO: Implementar este método
-        return null;
+    public User getUserById(UUID id) {
+        return userRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
     }
 
     @Override
-    public User getUser(Long id) {
-        // TODO: Implementar este método
-        return null;
+    public User getUserByInstitutionalId(String institutionalId) {
+        return userRepository.findByInstitutionalId(institutionalId)
+            .orElseThrow(() -> new RuntimeException("User not found with institutional id: " + institutionalId));
     }
 
     @Override
-    public User updateUser(Long id, User user) {
-        // TODO: Implementar este método
-        return null;
+    public List<User> getAllUsers() {
+        return userRepository.findAll();
     }
 
     @Override
-    public List<User> getTrainerAssignedUsers() {
-        // TODO: Implementar este método
-        return null;
+    public List<User> getUsersByRole(String role) {
+        return userRepository.findByRole(role);
     }
 
     @Override
-    public void assignUserToTrainer(Long userId, Long trainerId) {
-        // TODO: Implementar este método
+    public User updateUser(UUID id, UserDTO user) {
+        User existingUser = userRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
+        // Actualizar los campos necesarios
+        existingUser.setName(user.getName());
+        existingUser.setWeight(user.getWeight());
+        existingUser.setHeight(user.getHeight());
+        existingUser.setRole(user.getRole());
+        // Guardar los cambios
+        userRepository.save(existingUser);
+        return existingUser;
     }
+        
+
+    @Override
+    public User createUser(UserDTO userDTO) {
+        // Create a new User entity from the DTO
+        User newUser = new User();
+        newUser.setName(userDTO.getName());
+        newUser.setInstitutionalId(userDTO.getInstitutionalId());
+        newUser.setRole(userDTO.getRole());
+        newUser.setWeight(userDTO.getWeight());
+        newUser.setHeight(userDTO.getHeight());
+        
+        // Save the new user to the database
+        return userRepository.save(newUser);
+    }
+
+    @Override
+    public User deleteUser(UUID id) {
+        User user = userRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
+        
+        // Opcional: puedes realizar verificaciones adicionales antes de eliminar
+        // Por ejemplo, verificar que el usuario no tiene reservas activas
+        
+        // Eliminar el usuario
+        userRepository.delete(user);
+        
+        return user; // Devuelve el usuario eliminado
+    }
+
+    // TODO: Validar si un entrenador debe ser asignado para cada estudiante o solo por sesión de gym. 
+    // @Override
+    // public List<User> getTrainerAssignedUsers() {
+    //     // TODO: Implementar este método
+    //     // Get the current authenticated user (trainer)
+    //     String trainerInstitutionalId = SecurityContextHolder.getContext().getAuthentication().getName();
+    //     User trainer = userRepository.findByInstitutionalId(trainerInstitutionalId)
+    //         .orElseThrow(() -> new RuntimeException("Trainer not found"));
+
+    //     // Verify that the user is actually a trainer
+    //     if (!"TRAINER".equals(trainer.getRole())) {
+    //         throw new RuntimeException("Current user is not a trainer");
+    //     }
+
+    //     // Fetch all users assigned to this trainer
+    //     return userRepository.findByTrainerId(trainer.getId());
+    // }
+
+    // @Override
+    // public void assignUserToTrainer(Long userId, Long trainerId) {
+    //     // TODO: Implementar este método
+    // }
 
     // ------------- Seguimiento físico -------------
 

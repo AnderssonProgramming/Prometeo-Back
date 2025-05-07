@@ -15,6 +15,9 @@ public class User {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private UUID id;
     
+    @Column(name = "instutional_id", unique = true, nullable = false)
+    private String institutionalId;
+
     @Column(name = "name", nullable = false)
     private String name;
     
@@ -63,6 +66,18 @@ public class User {
 
     public String getRole() {
         return role;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
+    }
+
+    public String getInstitutionalId() {
+        return institutionalId;
+    }
+
+    public void setInstitutionalId(String institutionalId) {
+        this.institutionalId = institutionalId;
     }
 
 }
