@@ -145,15 +145,6 @@ public interface UserService {
     PhysicalProgress setPhysicalGoal(UUID userId, String goal);
     
     /**
-     * Registrar observación médica
-     * @param userId ID del usuario
-     * @param observation texto de la observación
-     * @param trainerId ID del entrenador que registra
-     * @return progreso con observación
-     */
-    PhysicalProgress recordMedicalObservation(UUID userId, String observation, UUID trainerId);
-    
-    /**
      * Calcular métricas de progreso
      * @param userId ID del usuario
      * @param months número de meses a analizar

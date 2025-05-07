@@ -3,6 +3,7 @@ package edu.eci.cvds.prometeo.service.impl;
 import edu.eci.cvds.prometeo.dto.*;
 import edu.eci.cvds.prometeo.model.*;
 import edu.eci.cvds.prometeo.repository.*;
+import edu.eci.cvds.prometeo.service.PhysicalProgressService;
 import edu.eci.cvds.prometeo.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -60,6 +61,10 @@ public class UserServiceImpl implements UserService {
     @Autowired
     private EquipmentRepository equipmentRepository;
     // Agregar otros repositorios según sea necesario
+
+    @Autowired
+    private PhysicalProgressService physicalProgressService; // Inyectar el servicio especializado
+
 
     // ------------- Operaciones básicas de usuario -------------
 
@@ -154,46 +159,49 @@ public class UserServiceImpl implements UserService {
     // ------------- Seguimiento físico -------------
 
     @Override
-    public PhysicalProgress recordPhysicalMeasurement(UUID userId, PhysicalProgress progress) {
-        // TODO: Implementar este método
-        return null;
-    }
+@Transactional
+public PhysicalProgress recordPhysicalMeasurement(UUID userId, PhysicalProgress progress) {
+    // Verifica que el usuario existe
+    User user = userRepository.findById(userId)
+            .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+    
+    // Delega al servicio especializado
+    return physicalProgressService.recordMeasurement(userId, progress);
+}
 
-    @Override
-    public List<PhysicalProgress> getPhysicalMeasurementHistory(UUID userId, Optional<LocalDate> startDate, Optional<LocalDate> endDate) {
-        // TODO: Implementar este método
-        return null;
-    }
+@Override
+public List<PhysicalProgress> getPhysicalMeasurementHistory(UUID userId, Optional<LocalDate> startDate, Optional<LocalDate> endDate) {
+    // Verifica que el usuario existe
+    userRepository.findById(userId)
+            .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+    
+    // Delega al servicio especializado
+    return physicalProgressService.getMeasurementHistory(userId, startDate, endDate);
+}
 
-    @Override
-    public Optional<PhysicalProgress> getLatestPhysicalMeasurement(UUID userId) {
-        // TODO: Implementar este método
-        return Optional.empty();
-    }
+@Override
+public Optional<PhysicalProgress> getLatestPhysicalMeasurement(UUID userId) {
+    // Delega al servicio especializado
+    return physicalProgressService.getLatestMeasurement(userId);
+}
 
-    @Override
-    public PhysicalProgress updatePhysicalMeasurement(UUID progressId, BodyMeasurements measurements) {
-        // TODO: Implementar este método
-        return null;
-    }
+@Override
+public PhysicalProgress updatePhysicalMeasurement(UUID progressId, BodyMeasurements measurements) {
+    // Delega al servicio especializado
+    return physicalProgressService.updateMeasurement(progressId, measurements);
+}
 
-    @Override
-    public PhysicalProgress setPhysicalGoal(UUID userId, String goal) {
-        // TODO: Implementar este método
-        return null;
-    }
+@Override
+public PhysicalProgress setPhysicalGoal(UUID userId, String goal) {
+    // Delega al servicio especializado
+    return physicalProgressService.setGoal(userId, goal);
+}
 
-    @Override
-    public PhysicalProgress recordMedicalObservation(UUID userId, String observation, UUID trainerId) {
-        // TODO: Implementar este método
-        return null;
-    }
-
-    @Override
-    public Map<String, Double> calculatePhysicalProgressMetrics(UUID userId, int months) {
-        // TODO: Implementar este método
-        return null;
-    }
+@Override
+public Map<String, Double> calculatePhysicalProgressMetrics(UUID userId, int months) {
+    // Delega al servicio especializado
+    return physicalProgressService.calculateProgressMetrics(userId, months);
+}
 
     // ------------- Gestión de rutinas -------------
 
