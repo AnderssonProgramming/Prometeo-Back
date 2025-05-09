@@ -26,26 +26,38 @@ public class JwtRequestFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
         final String authHeader = request.getHeader("Authorization");
 
+        System.out.println("🔍 Checking Authorization header...");
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            try {
+            System.out.println("✅ Authorization header found: " + authHeader);
 
+            try {
                 var claims = jwtUtil.extractClaims(authHeader);
 
-                String username = claims.get("username", String.class); // si quieres usarlo
+                String username = claims.get("username", String.class);
                 String role = claims.get("role", String.class);
                 String name = claims.get("name", String.class);
-                String idCard = claims.get("idCard", String.class); // ← este es el institutionalId
+                String idCard = claims.get("idCard", String.class);
 
-                // Guardar en request para que los controladores lo usen
-                request.setAttribute("username", username); // opcional
+                // Log extracted claims
+                System.out.println("✅ JWT Claims extracted:");
+                System.out.println("username = " + username);
+                System.out.println("role = " + role);
+                System.out.println("name = " + name);
+                System.out.println("idCard = " + idCard);
+
+                // Save attributes in the request
+                request.setAttribute("username", username);
                 request.setAttribute("role", role);
                 request.setAttribute("name", name);
                 request.setAttribute("institutionalId", idCard);
 
             } catch (Exception e) {
-                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token inválido");
+                System.out.println("❌ Error extracting JWT claims: " + e.getMessage());
+                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid token");
                 return;
             }
+        } else {
+            System.out.println("⚠️ Authorization header is missing or does not start with 'Bearer '");
         }
 
         chain.doFilter(request, response);

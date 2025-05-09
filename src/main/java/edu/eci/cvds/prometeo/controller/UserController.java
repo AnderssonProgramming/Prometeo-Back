@@ -99,27 +99,39 @@ public ResponseEntity<User> updateUser(
     return ResponseEntity.ok(userService.updateUser(id, userDTO));
 }
 
-@PostMapping
+@PostMapping("/")
 @Operation(summary = "Create user from JWT", description = "Creates a new user using data from the JWT token")
 @ApiResponse(responseCode = "201", description = "User created successfully",
         content = @Content(schema = @Schema(implementation = User.class)))
+@ApiResponse(responseCode = "400", description = "Invalid input data")
 @ApiResponse(responseCode = "409", description = "User already exists")
 public ResponseEntity<User> createUser(HttpServletRequest request) {
     try {
-        String institutionalId = (String) request.getAttribute("institutionalId"); // ← idCard del JWT
+        String institutionalId = (String) request.getAttribute("institutionalId");
         String username = (String) request.getAttribute("username");
         String name = (String) request.getAttribute("name");
         String role = (String) request.getAttribute("role");
 
+        // Log extracted attributes
+        System.out.println("🔍 Extracted attributes:");
+        System.out.println("institutionalId = " + institutionalId);
+        System.out.println("username = " + username);
+        System.out.println("name = " + name);
+        System.out.println("role = " + role);
+
+        // Validate attributes
         if (institutionalId == null || name == null || role == null) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+            System.out.println("❌ Missing required attributes");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
         }
 
-        if (userService.getUserByInstitutionalId(institutionalId) != null) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).build();
+        // Check if user already exists
+        if (userService.userExistsByInstitutionalId(institutionalId)) {
+            System.out.println("⚠️ User with institutionalId " + institutionalId + " already exists");
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(null);
         }
 
-        // Construir DTO
+        // Create user
         UserDTO userDTO = new UserDTO();
         userDTO.setInstitutionalId(institutionalId);
         userDTO.setName(name);
@@ -129,6 +141,7 @@ public ResponseEntity<User> createUser(HttpServletRequest request) {
         return new ResponseEntity<>(createdUser, HttpStatus.CREATED);
 
     } catch (Exception e) {
+        System.out.println("❌ Error creating user: " + e.getMessage());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
     }
 }

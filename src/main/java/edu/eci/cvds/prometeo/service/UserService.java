@@ -46,6 +46,7 @@ public interface UserService {
      */
     User getUserById(UUID id);
 
+    boolean userExistsByInstitutionalId(String institutionalId);
     /**
      * Obtener usuario por ID de tarjeta de identificación
      * @param idCard ID de tarjeta de identificación del usuario

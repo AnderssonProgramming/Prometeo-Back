@@ -70,6 +70,10 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public boolean userExistsByInstitutionalId(String institutionalId){
+        return userRepository.existsByInstitutionalId(institutionalId);
+    }
+    @Override
     public User getUserByInstitutionalId(String institutionalId) {
         return userRepository.findByInstitutionalId(institutionalId)
             .orElseThrow(() -> new RuntimeException("User not found with institutional id: " + institutionalId));
