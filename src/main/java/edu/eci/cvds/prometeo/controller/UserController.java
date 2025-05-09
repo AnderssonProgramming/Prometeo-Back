@@ -3,6 +3,7 @@ package edu.eci.cvds.prometeo.controller;
 import edu.eci.cvds.prometeo.model.*;
 import edu.eci.cvds.prometeo.service.*;
 import edu.eci.cvds.prometeo.dto.*;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
@@ -99,14 +100,39 @@ public ResponseEntity<User> updateUser(
 }
 
 @PostMapping
-@Operation(summary = "Create user", description = "Creates a new user in the system")
-@ApiResponse(responseCode = "201", description = "User created successfully", 
-    content = @Content(schema = @Schema(implementation = User.class)))
-public ResponseEntity<User> createUser(
-        @Parameter(description = "User data") @RequestBody UserDTO userDTO) {
-    User createdUser = userService.createUser(userDTO);
-    return new ResponseEntity<>(createdUser, HttpStatus.CREATED);
+@Operation(summary = "Create user from JWT", description = "Creates a new user using data from the JWT token")
+@ApiResponse(responseCode = "201", description = "User created successfully",
+        content = @Content(schema = @Schema(implementation = User.class)))
+@ApiResponse(responseCode = "409", description = "User already exists")
+public ResponseEntity<User> createUser(HttpServletRequest request) {
+    try {
+        String institutionalId = (String) request.getAttribute("institutionalId"); // ← idCard del JWT
+        String username = (String) request.getAttribute("username");
+        String name = (String) request.getAttribute("name");
+        String role = (String) request.getAttribute("role");
+
+        if (institutionalId == null || name == null || role == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        }
+
+        if (userService.getUserByInstitutionalId(institutionalId) != null) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).build();
+        }
+
+        // Construir DTO
+        UserDTO userDTO = new UserDTO();
+        userDTO.setInstitutionalId(institutionalId);
+        userDTO.setName(name);
+        userDTO.setRole(role);
+
+        User createdUser = userService.createUser(userDTO);
+        return new ResponseEntity<>(createdUser, HttpStatus.CREATED);
+
+    } catch (Exception e) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+    }
 }
+
 
 @DeleteMapping("/{id}")
 @Operation(summary = "Delete user", description = "Deletes a user from the system")
