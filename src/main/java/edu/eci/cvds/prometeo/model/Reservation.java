@@ -62,6 +62,34 @@ public class Reservation extends AuditableEntity {
     @Column(name = "canceled_at")
     private LocalDateTime canceledAt;
 
+    @Column(name = "attendace_time")
+    private LocalDateTime attendanceTime;
+
+    @Column(name = "notes")
+    private String notes;
+
+    public LocalDateTime getCancellationDate() {
+        return canceledAt;
+    }
+    public LocalDateTime getCheckInTime() {
+        return attendanceTime;
+    }
+
+    public void setCheckInTime(LocalDateTime checkInTime) {
+        this.attendanceTime = checkInTime;
+    }
+    public void setCancellationDate(LocalDateTime cancellationDate) {
+        this.canceledAt = cancellationDate;
+    }
+
+    public String getNotes() {
+        return notes;
+    }
+
+    public void setNotes(String notes) {
+        this.notes = notes;
+    }
+
     // Getters and setters
     public UUID getId() {
         return id;
@@ -196,5 +224,13 @@ public class Reservation extends AuditableEntity {
 
     public boolean isActive() {
         return this.status == ReservationStatus.CONFIRMED || this.status == ReservationStatus.PENDING;
+    }
+
+    public LocalDateTime getAttendanceTime() {
+        return attendanceTime;
+    }
+
+    public void setAttendanceTime(LocalDateTime attendanceTime) {
+        this.attendanceTime = attendanceTime;
     }
 }

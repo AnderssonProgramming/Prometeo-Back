@@ -38,4 +38,9 @@ public interface GymSessionRepository extends JpaRepository<GymSession, UUID> {
      * Find sessions with available capacity
      */
     List<GymSession> findBySessionDateAndReservedSpotsLessThan(LocalDate date, int capacity);
+
+    /**
+     * Find sessions by date
+     */
+    List<GymSession> findBySessionDate(LocalDate date);
 }
