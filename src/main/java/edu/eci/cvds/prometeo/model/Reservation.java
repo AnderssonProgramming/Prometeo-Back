@@ -65,6 +65,31 @@ public class Reservation extends AuditableEntity {
     @Column(name = "attendace_time")
     private LocalDateTime attendanceTime;
 
+    @Column(name = "notes")
+    private String notes;
+
+    public LocalDateTime getCancellationDate() {
+        return canceledAt;
+    }
+    public LocalDateTime getCheckInTime() {
+        return attendanceTime;
+    }
+
+    public void setCheckInTime(LocalDateTime checkInTime) {
+        this.attendanceTime = checkInTime;
+    }
+    public void setCancellationDate(LocalDateTime cancellationDate) {
+        this.canceledAt = cancellationDate;
+    }
+
+    public String getNotes() {
+        return notes;
+    }
+
+    public void setNotes(String notes) {
+        this.notes = notes;
+    }
+
     // Getters and setters
     public UUID getId() {
         return id;

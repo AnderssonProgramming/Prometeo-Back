@@ -24,7 +24,11 @@ public interface ReservationRepository extends JpaRepository<Reservation, UUID> 
             
     List<Reservation> findBySessionId(UUID sessionId);
 //     // Existing methods
-//     List<Reservation> findByUserId(UUID userId);
+    List<Reservation> findByUserId(UUID userId);
+        
+    
+    // Añadir este método para contar las reservas activas de un usuario
+    long countByUserIdAndStatusIn(UUID userId, List<ReservationStatus> statuses);
     
 //     List<Reservation> findBySessionId(UUID sessionId);
     

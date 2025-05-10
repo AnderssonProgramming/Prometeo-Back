@@ -8,52 +8,89 @@ import java.time.LocalTime;
 import java.util.List;
 import java.util.UUID;
 
+import edu.eci.cvds.prometeo.model.enums.ReservationStatus;
+
 @Data
 public class ReservationDTO {
-    private LocalDate date;
-    private LocalTime startTime;
-    private LocalTime endTime;
+    private UUID id;
+    private UUID userId;
+    private UUID sessionId;
+    private ReservationStatus status;
+    private LocalDateTime reservationDate;
+    private LocalDateTime cancellationDate;
+    private LocalDateTime checkInTime;
     private List<UUID> equipmentIds;
-    private Boolean joinWaitlistIfFull = false;
+    private String notes;
 
-    
-    public LocalDate getDate() {
-        return date;
+    public UUID getId() {
+        return id;
     }
-    
-    public void setDate(LocalDate date) {
-        this.date = date;
+
+    public void setId(UUID id) {
+        this.id = id;
     }
-    
-    public LocalTime getStartTime() {
-        return startTime;
+
+    public UUID getUserId() {
+        return userId;
     }
-    
-    public void setStartTime(LocalTime startTime) {
-        this.startTime = startTime;
+
+    public void setUserId(UUID userId) {
+        this.userId = userId;
     }
-    
-    public LocalTime getEndTime() {
-        return endTime;
+
+    public UUID getSessionId() {
+        return sessionId;
     }
-    
-    public void setEndTime(LocalTime endTime) {
-        this.endTime = endTime;
+
+    public void setSessionId(UUID sessionId) {
+        this.sessionId = sessionId;
     }
-    
+
+    public ReservationStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(ReservationStatus status) {
+        this.status = status;
+    }
+
+    public LocalDateTime getReservationDate() {
+        return reservationDate;
+    }
+
+    public void setReservationDate(LocalDateTime reservationDate) {
+        this.reservationDate = reservationDate;
+    }
+
+    public LocalDateTime getCancellationDate() {
+        return cancellationDate;
+    }
+
+    public void setCancellationDate(LocalDateTime cancellationDate) {
+        this.cancellationDate = cancellationDate;
+    }
+
+    public LocalDateTime getCheckInTime() {
+        return checkInTime;
+    }
+
+    public void setCheckInTime(LocalDateTime checkInTime) {
+        this.checkInTime = checkInTime;
+    }
+
     public List<UUID> getEquipmentIds() {
         return equipmentIds;
     }
-    
+
     public void setEquipmentIds(List<UUID> equipmentIds) {
         this.equipmentIds = equipmentIds;
     }
-    
-    public Boolean getJoinWaitlistIfFull() {
-        return joinWaitlistIfFull;
+
+    public String getNotes() {
+        return notes;
     }
-    
-    public void setJoinWaitlistIfFull(Boolean joinWaitlistIfFull) {
-        this.joinWaitlistIfFull = joinWaitlistIfFull;
+
+    public void setNotes(String notes) {
+        this.notes = notes;
     }
 }

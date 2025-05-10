@@ -21,6 +21,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -60,6 +61,10 @@ public class UserController {
 
     @Autowired
     private UserService userService;
+
+    
+    @Autowired
+    private GymReservationService gymReservationService;
 
     // TODO: Move this logic to userservice layer
     @Autowired
@@ -495,9 +500,21 @@ public ResponseEntity<List<Routine>> getRecommendedRoutines(
 public ResponseEntity<List<Object>> getGymAvailability(
         @Parameter(description = "Date to check") 
         @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
-    
     List<Object> availableSlots = userService.getAvailableTimeSlots(date);
     return ResponseEntity.ok(availableSlots);
+}
+
+@GetMapping("/gym/availability/time")
+@Operation(summary = "Check availability for specific time", description = "Checks gym availability for a specific date and time")
+@ApiResponse(responseCode = "200", description = "Availability information retrieved successfully")
+public ResponseEntity<Map<String, Object>> checkAvailabilityForTime(
+        @Parameter(description = "Date to check") 
+        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+        @Parameter(description = "Time to check")
+        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.TIME) LocalTime time) {
+    
+    Map<String, Object> availability = gymReservationService.getAvailability(date, time);
+    return ResponseEntity.ok(availability);
 }
 
 @PostMapping("/{userId}/reservations")
@@ -507,56 +524,47 @@ public ResponseEntity<List<Object>> getGymAvailability(
 @ApiResponse(responseCode = "400", description = "No available slots for the requested time")
 public ResponseEntity<Object> createReservation(
         @Parameter(description = "User ID") @PathVariable UUID userId,
-        @Parameter(description = "Reservation data") @RequestBody ReservationDTO reservationDTO) {
-    
+        @RequestBody ReservationDTO reservationDTO) {
     try {
-        UUID reservationId = userService.createGymReservation(
-                userId,
-                reservationDTO.getDate(),
-                reservationDTO.getStartTime(),
-                reservationDTO.getEndTime(),
-                Optional.ofNullable(reservationDTO.getEquipmentIds())
-        );
+        // Asegurarse de que el userId del path coincide con el del DTO
+        reservationDTO.setUserId(userId);
+        ReservationDTO created = gymReservationService.create(reservationDTO);
         
         Map<String, Object> response = new HashMap<>();
-        response.put("reservationId", reservationId);
+        response.put("reservationId", created.getId());
         response.put("message", "Reserva creada exitosamente");
         
         return new ResponseEntity<>(response, HttpStatus.CREATED);
-    } catch (RuntimeException e) {
+    } catch (IllegalArgumentException e) {
         Map<String, String> error = new HashMap<>();
         error.put("error", e.getMessage());
         return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
     }
 }
 
-@GetMapping("/{userId}/reservations/upcoming")
-@Operation(summary = "Get upcoming reservations", description = "Retrieves upcoming reservations for a user")
+@GetMapping("/{userId}/reservations")
+@Operation(summary = "Get user reservations", description = "Retrieves all reservations for a user")
 @ApiResponse(responseCode = "200", description = "Reservations retrieved successfully")
-@ApiResponse(responseCode = "404", description = "User not found")
-public ResponseEntity<List<Object>> getUpcomingReservations(
+public ResponseEntity<List<ReservationDTO>> getUserReservations(
         @Parameter(description = "User ID") @PathVariable UUID userId) {
-    
-    List<Object> reservations = userService.getUpcomingReservations(userId);
+    List<ReservationDTO> reservations = gymReservationService.getByUserId(userId);
     return ResponseEntity.ok(reservations);
 }
 
-@GetMapping("/{userId}/reservations/history")
-@Operation(summary = "Get reservation history", description = "Retrieves historical reservations for a user")
-@ApiResponse(responseCode = "200", description = "Reservation history retrieved successfully")
-@ApiResponse(responseCode = "404", description = "User not found")
-public ResponseEntity<List<Object>> getReservationHistory(
+@GetMapping("/{userId}/reservations/{reservationId}")
+@Operation(summary = "Get reservation details", description = "Retrieves details of a specific reservation")
+@ApiResponse(responseCode = "200", description = "Reservation details retrieved successfully")
+@ApiResponse(responseCode = "404", description = "Reservation not found")
+public ResponseEntity<ReservationDTO> getReservationDetails(
         @Parameter(description = "User ID") @PathVariable UUID userId,
-        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+        @Parameter(description = "Reservation ID") @PathVariable UUID reservationId) {
     
-    List<Object> history = userService.getReservationHistory(
-            userId, 
-            Optional.ofNullable(startDate), 
-            Optional.ofNullable(endDate)
-    );
+    Optional<ReservationDTO> reservation = gymReservationService.getById(reservationId);
     
-    return ResponseEntity.ok(history);
+    return reservation
+            .filter(r -> r.getUserId().equals(userId))
+            .map(ResponseEntity::ok)
+            .orElse(ResponseEntity.notFound().build());
 }
 
 @DeleteMapping("/{userId}/reservations/{reservationId}")
@@ -566,72 +574,91 @@ public ResponseEntity<List<Object>> getReservationHistory(
 @ApiResponse(responseCode = "403", description = "User not authorized to cancel this reservation")
 public ResponseEntity<Object> cancelReservation(
         @Parameter(description = "User ID") @PathVariable UUID userId,
-        @Parameter(description = "Reservation ID") @PathVariable UUID reservationId,
-        @RequestBody(required = false) Map<String, String> requestBody) {
-    
+        @Parameter(description = "Reservation ID") @PathVariable UUID reservationId) {
     try {
-        String reason = requestBody != null ? requestBody.get("reason") : null;
-        boolean cancelled = userService.cancelGymReservation(
-                reservationId,
-                userId,
-                Optional.ofNullable(reason)
-        );
+        // Verifica primero si la reserva existe y pertenece al usuario
+        Optional<ReservationDTO> reservation = gymReservationService.getById(reservationId);
+        if (reservation.isEmpty() || !reservation.get().getUserId().equals(userId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+        
+        gymReservationService.delete(reservationId);
         
         Map<String, String> response = new HashMap<>();
         response.put("message", "Reserva cancelada exitosamente");
         
         return ResponseEntity.ok(response);
-    } catch (RuntimeException e) {
+    } catch (IllegalArgumentException e) {
         Map<String, String> error = new HashMap<>();
         error.put("error", e.getMessage());
-        
-        HttpStatus status = e.getMessage().contains("no autorizado") ? 
-                HttpStatus.FORBIDDEN : HttpStatus.BAD_REQUEST;
-                
-        return new ResponseEntity<>(error, status);
+        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
     }
 }
 
-@PostMapping("/{userId}/reservations/{reservationId}/waitlist")
+@PostMapping("/{userId}/sessions/{sessionId}/waitlist")
 @Operation(summary = "Join waitlist", description = "Adds user to waitlist for a full session")
 @ApiResponse(responseCode = "200", description = "Added to waitlist successfully")
 @ApiResponse(responseCode = "404", description = "Session not found")
 public ResponseEntity<Object> joinWaitlist(
         @Parameter(description = "User ID") @PathVariable UUID userId,
         @Parameter(description = "Session ID") @PathVariable UUID sessionId) {
-    
-    // Implementación simple de lista de espera - en un sistema real querrías un servicio separado
-    // para manejar las notificaciones cuando se libere un cupo
-    Map<String, String> response = new HashMap<>();
-    response.put("message", "Has sido añadido a la lista de espera. Te notificaremos cuando haya cupo disponible.");
-    
-    return ResponseEntity.ok(response);
-}
-
-@PostMapping("/{userId}/reservations/{reservationId}/attendance")
-@Operation(summary = "Record gym attendance", description = "Records user's attendance to a reserved gym session")
-@ApiResponse(responseCode = "200", description = "Attendance recorded successfully")
-@ApiResponse(responseCode = "400", description = "Invalid attendance data")
-@ApiResponse(responseCode = "404", description = "User or reservation not found")
-public ResponseEntity<Object> recordAttendance(
-        @Parameter(description = "User ID") @PathVariable UUID userId,
-        @Parameter(description = "Reservation ID") @PathVariable UUID reservationId) {
-    
     try {
-        // Usar la hora actual del sistema para registrar la asistencia
-        LocalDateTime attendanceTime = LocalDateTime.now();
+        boolean added = gymReservationService.joinWaitlist(userId, sessionId);
         
-        boolean recorded = userService.recordGymAttendance(userId, reservationId, attendanceTime);
-        
-        Map<String, String> response = new HashMap<>();
-        response.put("message", "Asistencia registrada exitosamente");
-        
-        return ResponseEntity.ok(response);
-    } catch (RuntimeException e) {
+        if (added) {
+            Map<String, Object> status = gymReservationService.getWaitlistStatus(userId, sessionId);
+            Map<String, Object> response = new HashMap<>();
+            response.put("message", "Has sido añadido a la lista de espera. Te notificaremos cuando haya cupo disponible.");
+            response.put("status", status);
+            
+            return ResponseEntity.ok(response);
+        } else {
+            return ResponseEntity.badRequest().build();
+        }
+    } catch (IllegalArgumentException e) {
         Map<String, String> error = new HashMap<>();
         error.put("error", e.getMessage());
-        
         return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+    }
+}
+
+@GetMapping("/{userId}/sessions/{sessionId}/waitlist")
+@Operation(summary = "Get waitlist status", description = "Gets user's position in waitlist for a session")
+@ApiResponse(responseCode = "200", description = "Waitlist status retrieved successfully")
+public ResponseEntity<Map<String, Object>> getWaitlistStatus(
+        @Parameter(description = "User ID") @PathVariable UUID userId,
+        @Parameter(description = "Session ID") @PathVariable UUID sessionId) {
+    
+    Map<String, Object> status = gymReservationService.getWaitlistStatus(userId, sessionId);
+    return ResponseEntity.ok(status);
+}
+
+@GetMapping("/{userId}/waitlists")
+@Operation(summary = "Get all user waitlists", description = "Gets all sessions where user is in waitlist")
+@ApiResponse(responseCode = "200", description = "Waitlists retrieved successfully")
+public ResponseEntity<List<Map<String, Object>>> getUserWaitlists(
+        @Parameter(description = "User ID") @PathVariable UUID userId) {
+    
+    List<Map<String, Object>> waitlists = gymReservationService.getUserWaitlists(userId);
+    return ResponseEntity.ok(waitlists);
+}
+
+@DeleteMapping("/{userId}/sessions/{sessionId}/waitlist")
+@Operation(summary = "Leave waitlist", description = "Removes user from waitlist for a session")
+@ApiResponse(responseCode = "200", description = "Removed from waitlist successfully")
+@ApiResponse(responseCode = "404", description = "User not in waitlist or session not found")
+public ResponseEntity<Object> leaveWaitlist(
+        @Parameter(description = "User ID") @PathVariable UUID userId,
+        @Parameter(description = "Session ID") @PathVariable UUID sessionId) {
+    
+    boolean removed = gymReservationService.leaveWaitlist(userId, sessionId);
+    
+    if (removed) {
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "Has sido removido de la lista de espera exitosamente");
+        return ResponseEntity.ok(response);
+    } else {
+        return ResponseEntity.notFound().build();
     }
 }
     // // -----------------------------------------------------
