@@ -41,6 +41,7 @@ public class PrometeoExceptions extends RuntimeException {
     public static final String YA_EXISTE_RESERVA = "Ya existe una reserva para esta sesión";
     public static final String OBJETIVO_NO_VALIDO = "El objetivo de la rutina no puede estar vacío";
     public static final String CANCELACION_TARDIA = "No se puede cancelar la reserva con menos de 2 horas de anticipación";
+    public static final String NO_EXISTE_META = "Meta no encontrada.";
     
     // Nuevos mensajes para GymReservationService
     public static final String HORARIO_NO_DISPONIBLE = "El horario seleccionado no está disponible";
