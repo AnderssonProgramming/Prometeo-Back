@@ -1,9 +1,7 @@
 package edu.eci.cvds.prometeo.model;
 
 import edu.eci.cvds.prometeo.model.base.BaseEntity;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -18,37 +16,21 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Recommendation extends BaseEntity {
+    @Id
+    @GeneratedValue
+    private UUID id;
 
-    @Column(name = "user_id", nullable = false)
-    private UUID userId;
+    @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
-    @Column(name = "routine_id", nullable = false)
-    private UUID routineId;
+    @ManyToOne
+    @JoinColumn(name = "routine_id", nullable = false)
+    private Routine routine;
 
     @Column(name = "active", nullable = false)
     private boolean active;
 
-    public UUID getUserId() {
-        return userId;
-    }
-
-    public void setUserId(UUID userId) {
-        this.userId = userId;
-    }
-
-    public UUID getRoutineId() {
-        return routineId;
-    }
-
-    public void setRoutineId(UUID routineId) {
-        this.routineId = routineId;
-    }
-
-    public boolean isActive() {
-        return active;
-    }
-
-    public void setActive(boolean active) {
-        this.active = active;
-    }
+    @Column(name = "weight", nullable = false)
+    private int weight;
 }
