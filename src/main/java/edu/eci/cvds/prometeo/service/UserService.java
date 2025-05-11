@@ -142,6 +142,18 @@ public interface UserService {
      */
     Map<String, Double> calculatePhysicalProgressMetrics(UUID userId, int months);
     
+    /**
+     * Obtain the physical progress of a user for a trainer
+     * @param trainerId ID of the trainer
+     * @param userId ID of the user
+     * @param ofNullable optional start date for filtering
+     * @param ofNullable2 optional end date for filtering
+     * @return list of physical progress records
+     * @throws IllegalArgumentException if trainerId or userId is null
+     */
+    List<PhysicalProgress> getTrainerViewOfUserProgress(UUID trainerId, UUID userId, Optional<LocalDate> ofNullable,
+            Optional<LocalDate> ofNullable2);
+
     // ------------- Gestión de rutinas -------------
     
     /**
@@ -324,4 +336,5 @@ public interface UserService {
      * @return datos estadísticos
      */
     Map<String, Object> generateGymUsageStatistics(LocalDate startDate, LocalDate endDate);
+
 }

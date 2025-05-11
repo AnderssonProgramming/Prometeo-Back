@@ -191,6 +191,21 @@ public class UserServiceImpl implements UserService {
         return physicalProgressService.calculateProgressMetrics(userId, months);
     }
 
+    @Override
+    public List<PhysicalProgress> getTrainerViewOfUserProgress(UUID trainerId, UUID userId,
+            Optional<LocalDate> ofNullable, Optional<LocalDate> ofNullable2) {
+        // Verificar que el entrenador existe
+        @SuppressWarnings("unused")
+        User trainer = userRepository.findById(trainerId)
+                .orElseThrow(() -> new RuntimeException("Entrenador no encontrado"));
+        // Verificar que el usuario existe
+        @SuppressWarnings("unused")
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        // Delega al servicio especializado
+        return physicalProgressService.getMeasurementHistory(userId, ofNullable, ofNullable2);
+    }
+
     // ------------- Gestión de rutinas -------------
 
     @Override
@@ -551,4 +566,6 @@ public boolean recordGymAttendance(UUID userId, UUID reservationId, LocalDateTim
         // TODO: Implementar este método
         return null;
     }
+
+    
 }
