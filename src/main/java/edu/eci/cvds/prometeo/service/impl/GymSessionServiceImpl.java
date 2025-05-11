@@ -4,7 +4,6 @@ import edu.eci.cvds.prometeo.model.GymSession;
 import edu.eci.cvds.prometeo.repository.GymSessionRepository;
 import edu.eci.cvds.prometeo.service.GymSessionService;
 import edu.eci.cvds.prometeo.PrometeoExceptions;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,7 +16,6 @@ public class GymSessionServiceImpl implements GymSessionService {
 
     private final GymSessionRepository gymSessionRepository;
 
-    @Autowired
     public GymSessionServiceImpl(GymSessionRepository gymSessionRepository) {
         this.gymSessionRepository = gymSessionRepository;
     }

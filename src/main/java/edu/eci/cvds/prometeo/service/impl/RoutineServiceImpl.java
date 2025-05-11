@@ -9,12 +9,10 @@ import edu.eci.cvds.prometeo.repository.UserRoutineRepository;
 import edu.eci.cvds.prometeo.service.RoutineService;
 import edu.eci.cvds.prometeo.service.NotificationService;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -28,7 +26,6 @@ public class RoutineServiceImpl implements RoutineService {
     private final UserRoutineRepository userRoutineRepository;
     private final NotificationService notificationService;
 
-    @Autowired
     public RoutineServiceImpl(
             RoutineRepository routineRepository,
             RoutineExerciseRepository routineExerciseRepository,

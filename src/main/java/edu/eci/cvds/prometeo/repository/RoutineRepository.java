@@ -1,7 +1,7 @@
 package edu.eci.cvds.prometeo.repository;
 
 import edu.eci.cvds.prometeo.model.Routine;
-import edu.eci.cvds.prometeo.model.RoutineExercise;
+
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;

@@ -3,8 +3,6 @@ package edu.eci.cvds.prometeo.service;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
 
 /**
  * Service for generating reports and statistics

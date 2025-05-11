@@ -13,9 +13,6 @@ public class RoutineExerciseDTO {
     private int restTime;
     private int sequenceOrder;
 
-    // Note: Since you're using Lombok's @Data annotation, 
-    // these getters and setters are automatically generated.
-    // Adding them manually is redundant but here they are:
 
     public UUID getId() {
         return id;

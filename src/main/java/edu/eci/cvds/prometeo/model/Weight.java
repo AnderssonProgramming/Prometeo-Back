@@ -1,6 +1,5 @@
 package edu.eci.cvds.prometeo.model;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;

@@ -1,13 +1,11 @@
 package edu.eci.cvds.prometeo.service;
 
-import edu.eci.cvds.prometeo.model.Routine;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.Optional;
 
 /**
  * Service for providing personalized recommendations to users

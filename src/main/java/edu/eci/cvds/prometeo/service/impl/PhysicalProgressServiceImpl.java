@@ -4,7 +4,6 @@ import edu.eci.cvds.prometeo.model.PhysicalProgress;
 import edu.eci.cvds.prometeo.model.BodyMeasurements;
 import edu.eci.cvds.prometeo.repository.PhysicalProgressRepository;
 import edu.eci.cvds.prometeo.service.PhysicalProgressService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -15,7 +14,6 @@ public class PhysicalProgressServiceImpl implements PhysicalProgressService {
 
     private final PhysicalProgressRepository physicalProgressRepository;
 
-    @Autowired
     public PhysicalProgressServiceImpl(PhysicalProgressRepository physicalProgressRepository) {
         this.physicalProgressRepository = physicalProgressRepository;
     }

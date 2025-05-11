@@ -1,7 +1,5 @@
 package edu.eci.cvds.prometeo.service.impl;
 
-import edu.eci.cvds.prometeo.model.Routine;
-import edu.eci.cvds.prometeo.model.User;
 import edu.eci.cvds.prometeo.model.PhysicalProgress;
 import edu.eci.cvds.prometeo.repository.RoutineRepository;
 import edu.eci.cvds.prometeo.repository.UserRepository;
@@ -13,7 +11,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.*;
-import java.util.stream.Collectors;
+
 
 @Service
 public class RecommendationServiceImpl implements RecommendationService {

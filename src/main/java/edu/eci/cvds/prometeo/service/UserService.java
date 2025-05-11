@@ -2,7 +2,6 @@ package edu.eci.cvds.prometeo.service;
 
 import edu.eci.cvds.prometeo.dto.*;
 import edu.eci.cvds.prometeo.model.*;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -92,15 +91,6 @@ public interface UserService {
      * @return lista de perfiles de usuario
      */
 
-     // TODO: Validar si la asignación de entrenadores es por sesión de gym
-    // List<User> getTrainerAssignedUsers();
-    
-    // /**
-    //  * Asignar un usuario a un entrenador
-    //  * @param userId ID del usuario
-    //  * @param trainerId ID del entrenador
-    //  */
-    // void assignUserToTrainer(Long userId, Long trainerId);
     
     // ------------- Seguimiento físico -------------
     

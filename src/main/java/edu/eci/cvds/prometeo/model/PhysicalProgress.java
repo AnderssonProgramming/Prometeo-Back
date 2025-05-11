@@ -41,7 +41,6 @@ private Routine activeRoutine;
     @Column(name = "trainer_observations")
     private String trainerObservations;
 
-    // TODO: Fix lombok issue with @AllArgsConstructor and @NoArgsConstructor
     public void updateWeight(double weightValue) {
         if (this.weight == null) {
             this.weight = new Weight(weightValue, WeightUnit.KG);

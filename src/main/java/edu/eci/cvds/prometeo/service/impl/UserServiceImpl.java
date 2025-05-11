@@ -8,10 +8,8 @@ import edu.eci.cvds.prometeo.service.PhysicalProgressService;
 import edu.eci.cvds.prometeo.service.RoutineService;
 import edu.eci.cvds.prometeo.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -60,11 +58,7 @@ public class UserServiceImpl implements UserService {
     @Autowired
     private UserRepository userRepository;
     @Autowired
-    private PhysicalProgressRepository physicalProgressRepository;
-    @Autowired
     private RoutineRepository routineRepository;
-    @Autowired
-    private EquipmentRepository equipmentRepository;
     @Autowired
     private GymSessionRepository gymSessionRepository;
     @Autowired
@@ -148,6 +142,7 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public PhysicalProgress recordPhysicalMeasurement(UUID userId, PhysicalProgress progress) {
         // Verifica que el usuario existe
+        @SuppressWarnings("unused")
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
         
@@ -208,6 +203,7 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public void assignRoutineToUser(UUID userId, UUID routineId) {
         // Verificar que el usuario existe
+        @SuppressWarnings("unused")
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
                 
@@ -273,6 +269,7 @@ public class UserServiceImpl implements UserService {
     @Override
 public UUID createGymReservation(UUID userId, LocalDate date, LocalTime startTime, LocalTime endTime, Optional<List<UUID>> equipmentIds) {
     // Verificar que el usuario existe
+    @SuppressWarnings("unused")
     User user = userRepository.findById(userId)
             .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
     
@@ -353,6 +350,7 @@ public boolean cancelGymReservation(UUID reservationId, UUID userId, Optional<St
 @Override
 public List<Object> getUpcomingReservations(UUID userId) {
     // Obtener reservas futuras del usuario
+    @SuppressWarnings("unused")
     LocalDate today = LocalDate.now();
     List<Reservation> reservations = reservationRepository
             .findByUserIdAndReservationDateGreaterThanEqualAndStatusOrderByReservationDateAsc(
@@ -449,6 +447,7 @@ private List<Object> convertReservationsToMaps(List<Reservation> reservations) {
 @Transactional
 public boolean recordGymAttendance(UUID userId, UUID reservationId, LocalDateTime attendanceTime) {
     // Verificar que el usuario existe
+    @SuppressWarnings("unused")
     User user = userRepository.findById(userId)
             .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
     

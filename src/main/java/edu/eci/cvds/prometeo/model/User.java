@@ -1,7 +1,6 @@
 package edu.eci.cvds.prometeo.model;
 
 import jakarta.persistence.*;
-import java.time.LocalDate;
 import java.util.UUID;
 
 import edu.eci.cvds.prometeo.model.base.BaseEntity;

@@ -4,7 +4,6 @@ import edu.eci.cvds.prometeo.model.GymSession;
 import edu.eci.cvds.prometeo.model.Reservation;
 import edu.eci.cvds.prometeo.repository.GymSessionRepository;
 import edu.eci.cvds.prometeo.repository.ReservationRepository;
-import edu.eci.cvds.prometeo.repository.UserRepository;
 import edu.eci.cvds.prometeo.service.NotificationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,9 +23,6 @@ public class NotificationServiceImpl implements NotificationService {
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
-    @Autowired
-    private UserRepository userRepository;
-    
     @Autowired
     private GymSessionRepository gymSessionRepository;
     

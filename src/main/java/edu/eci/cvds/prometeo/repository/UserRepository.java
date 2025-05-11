@@ -1,7 +1,6 @@
 package edu.eci.cvds.prometeo.repository;
 
 import edu.eci.cvds.prometeo.model.User;
-import edu.eci.cvds.prometeo.model.enums.UserRole;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -12,10 +11,16 @@ import java.util.UUID;
 @Repository
 public interface UserRepository extends JpaRepository<User, UUID> {
     
-    // Optional<User> getUserById(UUID id);
-    // Optional<User> getUser(String username);
-    // TODO: To see if this is implicit
+    /**
+     * Finds all users in the system.
+     */
     List<User> findAll();
+
+    /**
+     * Finds a user by their role.
+     * @param role the role of the user
+     * @return a list of users with the specified role
+     */
     List<User> findByRole(String role);
     Optional<User> findByInstitutionalId(String institutionalId);
 
