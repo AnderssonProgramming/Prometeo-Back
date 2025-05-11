@@ -261,4 +261,11 @@ public class GymReservationServiceImpl implements GymReservationService {
         dto.setNotes(reservation.getNotes());
         return dto;
     }
+
+    // TODO: Validar que el TrainerId si esté en la base de datos. 
+    // TODO: Validar si vale la pena tener una lista de espera, verificar si eliminar endpoints de esto
+    // TODO: Implementar que el obtener sessions devuelva el id del trainner asociado
+    // TODO: Implementar crud de equipments
+    // TODO: Arreglar endpoint GET {{base_url}}/users/trainer/{{TRAINER_ID}}/sessions. no está devolviendo sessions
+    // TODO: Esta cancelación debería notificar a todos los usuarios afectados.- Hablar con equipo encargado notificaciones
 }
