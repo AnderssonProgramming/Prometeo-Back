@@ -62,7 +62,7 @@ public class UserController {
     @Autowired
     private UserService userService;
 
-    
+
     @Autowired
     private GymReservationService gymReservationService;
 
@@ -75,6 +75,9 @@ public class UserController {
 
     @Autowired
     private BaseExerciseService baseExerciseService;
+
+    @Autowired
+    private GoalService goalService;
 
     // -----------------------------------------------------
     // User profile endpoints
@@ -175,6 +178,58 @@ public class UserController {
         return new ResponseEntity<>(savedProgress, HttpStatus.CREATED);
     }
 
+    // // -----------------------------------------------------
+    // // Goals endpoints
+    // // -----------------------------------------------------
+
+    @PostMapping("/{userId}/goals")
+    @Operation(summary = "Create goal", description = "Creates a new fitness goal for a user")
+    @ApiResponse(responseCode = "201", description = "Goal created successfully")
+    public ResponseEntity<String> createGoal(
+            @Parameter(description = "User ID") @PathVariable UUID userId,
+            @Parameter(description = "Goal data") @RequestBody List<String> goals) {
+        try {
+            goalService.addUserGoal(userId, goals);
+            return ResponseEntity.ok("Goals updated and recommendations refreshed.");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
+    }
+
+    @GetMapping("/{userId}/goals")
+    @Operation(summary = "Get user goals", description = "Retrieves all goals for a user")
+    @ApiResponse(responseCode = "200", description = "Goals retrieved successfully")
+    public ResponseEntity<List<Goal>> getUserGoals(@Parameter(description = "User ID") @PathVariable UUID userId) {
+        List<Goal> goals = goalService.getGoalsByUser(userId);
+        return ResponseEntity.ok(goals);
+    }
+
+    @PutMapping("/{userId}/goals/{goalId}")
+    @Operation(summary = "Update goal", description = "Updates an existing goal")
+    @ApiResponse(responseCode = "200", description = "Goal updated successfully")
+    public ResponseEntity<String> updateGoal(
+            @Parameter(description = "Map of Goal IDs and updated text") @RequestBody Map<UUID, String> updatedGoals) {
+        try {
+            goalService.updateUserGoal(updatedGoals);
+            return ResponseEntity.ok("Goal updated.");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
+    }
+
+    @DeleteMapping("/{userId}/goals/{goalId}")
+    @Operation(summary = "Delete goal", description = "Deletes a goal")
+    @ApiResponse(responseCode = "200", description = "Goal deleted successfully")
+    public ResponseEntity<String> deleteGoal(
+            @Parameter(description = "Goal ID") @PathVariable UUID goalId) {
+        try {
+            goalService.deleteGoal(goalId);
+            return ResponseEntity.ok("Goal deleted.");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
+    }
+
     @GetMapping("/{userId}/physical-progress")
     @Operation(summary = "Get physical measurement history", description = "Retrieves physical measurement history for a user")
     @ApiResponse(responseCode = "200", description = "Measurements retrieved successfully")
@@ -212,15 +267,14 @@ public class UserController {
             @Parameter(description = "Progress ID") @PathVariable UUID progressId,
             @RequestBody BodyMeasurementsDTO measurementsDTO) {
 
-        // Convertir DTO a entidad
-        BodyMeasurements measurements = new BodyMeasurements();
-        measurements.setHeight(measurementsDTO.getHeight());
-        measurements.setChestCircumference(measurementsDTO.getChestCircumference());
-        measurements.setWaistCircumference(measurementsDTO.getWaistCircumference());
-        measurements.setHipCircumference(measurementsDTO.getHipCircumference());
-        measurements.setBicepsCircumference(measurementsDTO.getBicepsCircumference());
-        measurements.setThighCircumference(measurementsDTO.getThighCircumference());
-
+    // Convertir DTO a entidad
+    BodyMeasurements measurements = new BodyMeasurements();
+    measurements.setHeight(measurementsDTO.getHeight());
+    measurements.setChestCircumference(measurementsDTO.getChestCircumference());
+    measurements.setWaistCircumference(measurementsDTO.getWaistCircumference());
+    measurements.setHipCircumference(measurementsDTO.getHipCircumference());
+    measurements.setBicepsCircumference(measurementsDTO.getBicepsCircumference());
+    measurements.setThighCircumference(measurementsDTO.getThighCircumference());
         PhysicalProgress updatedProgress = userService.updatePhysicalMeasurement(progressId, measurements);
         return ResponseEntity.ok(updatedProgress);
     }
@@ -306,7 +360,7 @@ public ResponseEntity<Routine> getCurrentRoutine(
 public ResponseEntity<Void> assignRoutineToUser(
         @Parameter(description = "User ID") @PathVariable UUID userId,
         @Parameter(description = "Routine ID") @PathVariable UUID routineId) {
-    
+
     userService.assignRoutineToUser(userId, routineId);
     return ResponseEntity.noContent().build();
 }
@@ -326,13 +380,13 @@ public ResponseEntity<Routine> createCustomRoutine(
     routine.setDifficulty(routineDTO.getDifficulty());
     routine.setGoal(routineDTO.getGoal());
     routine.setCreationDate(LocalDate.now());
-    
+
     // Crear una lista vacía de ejercicios desde el principio
     routine.setExercises(new ArrayList<>());
-    
+
     // Crear primero la rutina con la lista vacía
     Routine createdRoutine = userService.createCustomRoutine(userId, routine);
-    
+
     // Ahora que la rutina tiene un ID, añadir los ejercicios uno por uno
     if (routineDTO.getExercises() != null && !routineDTO.getExercises().isEmpty()) {
         // Usar un enfoque de servicio para añadir cada ejercicio individualmente
@@ -344,16 +398,16 @@ public ResponseEntity<Routine> createCustomRoutine(
             exercise.setRepetitions(exerciseDTO.getRepetitions());
             exercise.setRestTime(exerciseDTO.getRestTime());
             exercise.setSequenceOrder(exerciseDTO.getSequenceOrder());
-            
+
             // Añadir a la base de datos directamente sin pasar por la colección de la rutina
             routineExerciseRepository.save(exercise);
         }
     }
-    
+
     // Recargar la rutina para obtener todos los ejercicios asociados
     return new ResponseEntity<>(
         routineRepository.findById(createdRoutine.getId())
-            .orElseThrow(() -> new RuntimeException("Failed to find newly created routine")), 
+            .orElseThrow(() -> new RuntimeException("Failed to find newly created routine")),
         HttpStatus.CREATED
     );
 }
@@ -369,13 +423,13 @@ public ResponseEntity<Routine> updateRoutine(
     // Buscar la rutina existente
     Routine existingRoutine = routineRepository.findById(routineId)
             .orElseThrow(() -> new RuntimeException("Routine not found"));
-    
+
     // Actualizar campos
     existingRoutine.setName(routineDTO.getName());
     existingRoutine.setDescription(routineDTO.getDescription());
     existingRoutine.setDifficulty(routineDTO.getDifficulty());
     existingRoutine.setGoal(routineDTO.getGoal());
-    
+
     // Actualizar la rutina
     Routine updatedRoutine = userService.updateRoutine(routineId, existingRoutine);
     return ResponseEntity.ok(updatedRoutine);
@@ -389,12 +443,12 @@ public ResponseEntity<Void> logRoutineProgress(
         @Parameter(description = "User ID") @PathVariable UUID userId,
         @Parameter(description = "Routine ID") @PathVariable UUID routineId,
         @Parameter(description = "Progress percentage") @RequestBody Map<String, Integer> progressData) {
-    
+
     Integer completedPercentage = progressData.get("completed");
     if (completedPercentage == null) {
         completedPercentage = 100; // Valor por defecto si no se proporciona
     }
-    
+
     userService.logRoutineProgress(userId, routineId, completedPercentage);
     return ResponseEntity.noContent().build();
 }
@@ -405,7 +459,7 @@ public ResponseEntity<Void> logRoutineProgress(
 @ApiResponse(responseCode = "404", description = "User not found")
 public ResponseEntity<List<Routine>> getRecommendedRoutines(
         @Parameter(description = "User ID") @PathVariable UUID userId) {
-    
+
     List<Routine> recommendations = userService.getRecommendedRoutines(userId);
     return ResponseEntity.ok(recommendations);
 }
@@ -417,47 +471,47 @@ public ResponseEntity<List<Routine>> getRecommendedRoutines(
     public ResponseEntity<List<BaseExercise>> getAllExercises() {
         return ResponseEntity.ok(baseExerciseService.getAllExercises());
     }
-    
+
     @GetMapping("/exercises/{id}")
     @Operation(summary = "Get exercise by ID", description = "Retrieves a specific exercise by its ID")
     @ApiResponse(responseCode = "200", description = "Exercise found")
     @ApiResponse(responseCode = "404", description = "Exercise not found")
     public ResponseEntity<BaseExercise> getExerciseById(
             @Parameter(description = "Exercise ID") @PathVariable UUID id) {
-        
+
         return baseExerciseService.getExerciseById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
-    
+
     @GetMapping("/exercises/muscle-group/{muscleGroup}")
     @Operation(summary = "Get exercises by muscle group", description = "Retrieves exercises for a specific muscle group")
     @ApiResponse(responseCode = "200", description = "Exercises retrieved successfully")
     public ResponseEntity<List<BaseExercise>> getExercisesByMuscleGroup(
             @Parameter(description = "Muscle group") @PathVariable String muscleGroup) {
-        
+
         return ResponseEntity.ok(baseExerciseService.getExercisesByMuscleGroup(muscleGroup));
     }
-    
+
     @GetMapping("/exercises/search")
     @Operation(summary = "Search exercises", description = "Searches exercises by name")
     @ApiResponse(responseCode = "200", description = "Search results retrieved")
     public ResponseEntity<List<BaseExercise>> searchExercises(
             @Parameter(description = "Search term") @RequestParam String name) {
-        
+
         return ResponseEntity.ok(baseExerciseService.searchExercisesByName(name));
     }
-    
+
     @PostMapping("/exercises")
     @Operation(summary = "Create exercise", description = "Creates a new base exercise")
     @ApiResponse(responseCode = "201", description = "Exercise created successfully")
     public ResponseEntity<BaseExercise> createExercise(
             @Parameter(description = "Exercise data") @RequestBody BaseExerciseDTO exerciseDTO) {
-        
+
         BaseExercise createdExercise = baseExerciseService.createExercise(exerciseDTO);
         return new ResponseEntity<>(createdExercise, HttpStatus.CREATED);
     }
-    
+
     @PutMapping("/exercises/{id}")
     @Operation(summary = "Update exercise", description = "Updates an existing exercise")
     @ApiResponse(responseCode = "200", description = "Exercise updated successfully")
@@ -465,7 +519,7 @@ public ResponseEntity<List<Routine>> getRecommendedRoutines(
     public ResponseEntity<BaseExercise> updateExercise(
             @Parameter(description = "Exercise ID") @PathVariable UUID id,
             @Parameter(description = "Updated exercise data") @RequestBody BaseExerciseDTO exerciseDTO) {
-        
+
         try {
             BaseExercise updatedExercise = baseExerciseService.updateExercise(id, exerciseDTO);
             return ResponseEntity.ok(updatedExercise);
@@ -473,14 +527,14 @@ public ResponseEntity<List<Routine>> getRecommendedRoutines(
             return ResponseEntity.notFound().build();
         }
     }
-    
+
     @DeleteMapping("/exercises/{id}")
     @Operation(summary = "Delete exercise", description = "Deletes an exercise (soft delete)")
     @ApiResponse(responseCode = "204", description = "Exercise deleted successfully")
     @ApiResponse(responseCode = "404", description = "Exercise not found")
     public ResponseEntity<Void> deleteExercise(
             @Parameter(description = "Exercise ID") @PathVariable UUID id) {
-        
+
         try {
             baseExerciseService.deleteExercise(id);
             return ResponseEntity.noContent().build();
@@ -498,7 +552,7 @@ public ResponseEntity<List<Routine>> getRecommendedRoutines(
 @Operation(summary = "Get gym availability", description = "Retrieves gym availability for a specific date")
 @ApiResponse(responseCode = "200", description = "Availability information retrieved successfully")
 public ResponseEntity<List<Object>> getGymAvailability(
-        @Parameter(description = "Date to check") 
+        @Parameter(description = "Date to check")
         @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
     List<Object> availableSlots = userService.getAvailableTimeSlots(date);
     return ResponseEntity.ok(availableSlots);
@@ -508,11 +562,11 @@ public ResponseEntity<List<Object>> getGymAvailability(
 @Operation(summary = "Check availability for specific time", description = "Checks gym availability for a specific date and time")
 @ApiResponse(responseCode = "200", description = "Availability information retrieved successfully")
 public ResponseEntity<Map<String, Object>> checkAvailabilityForTime(
-        @Parameter(description = "Date to check") 
+        @Parameter(description = "Date to check")
         @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
         @Parameter(description = "Time to check")
         @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.TIME) LocalTime time) {
-    
+
     Map<String, Object> availability = gymReservationService.getAvailability(date, time);
     return ResponseEntity.ok(availability);
 }
@@ -529,11 +583,11 @@ public ResponseEntity<Object> createReservation(
         // Asegurarse de que el userId del path coincide con el del DTO
         reservationDTO.setUserId(userId);
         ReservationDTO created = gymReservationService.create(reservationDTO);
-        
+
         Map<String, Object> response = new HashMap<>();
         response.put("reservationId", created.getId());
         response.put("message", "Reserva creada exitosamente");
-        
+
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     } catch (IllegalArgumentException e) {
         Map<String, String> error = new HashMap<>();
@@ -558,9 +612,9 @@ public ResponseEntity<List<ReservationDTO>> getUserReservations(
 public ResponseEntity<ReservationDTO> getReservationDetails(
         @Parameter(description = "User ID") @PathVariable UUID userId,
         @Parameter(description = "Reservation ID") @PathVariable UUID reservationId) {
-    
+
     Optional<ReservationDTO> reservation = gymReservationService.getById(reservationId);
-    
+
     return reservation
             .filter(r -> r.getUserId().equals(userId))
             .map(ResponseEntity::ok)
@@ -581,12 +635,12 @@ public ResponseEntity<Object> cancelReservation(
         if (reservation.isEmpty() || !reservation.get().getUserId().equals(userId)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
-        
+
         gymReservationService.delete(reservationId);
-        
+
         Map<String, String> response = new HashMap<>();
         response.put("message", "Reserva cancelada exitosamente");
-        
+
         return ResponseEntity.ok(response);
     } catch (IllegalArgumentException e) {
         Map<String, String> error = new HashMap<>();
@@ -604,13 +658,13 @@ public ResponseEntity<Object> joinWaitlist(
         @Parameter(description = "Session ID") @PathVariable UUID sessionId) {
     try {
         boolean added = gymReservationService.joinWaitlist(userId, sessionId);
-        
+
         if (added) {
             Map<String, Object> status = gymReservationService.getWaitlistStatus(userId, sessionId);
             Map<String, Object> response = new HashMap<>();
             response.put("message", "Has sido añadido a la lista de espera. Te notificaremos cuando haya cupo disponible.");
             response.put("status", status);
-            
+
             return ResponseEntity.ok(response);
         } else {
             return ResponseEntity.badRequest().build();
@@ -628,7 +682,7 @@ public ResponseEntity<Object> joinWaitlist(
 public ResponseEntity<Map<String, Object>> getWaitlistStatus(
         @Parameter(description = "User ID") @PathVariable UUID userId,
         @Parameter(description = "Session ID") @PathVariable UUID sessionId) {
-    
+
     Map<String, Object> status = gymReservationService.getWaitlistStatus(userId, sessionId);
     return ResponseEntity.ok(status);
 }
@@ -638,7 +692,7 @@ public ResponseEntity<Map<String, Object>> getWaitlistStatus(
 @ApiResponse(responseCode = "200", description = "Waitlists retrieved successfully")
 public ResponseEntity<List<Map<String, Object>>> getUserWaitlists(
         @Parameter(description = "User ID") @PathVariable UUID userId) {
-    
+
     List<Map<String, Object>> waitlists = gymReservationService.getUserWaitlists(userId);
     return ResponseEntity.ok(waitlists);
 }
@@ -650,9 +704,9 @@ public ResponseEntity<List<Map<String, Object>>> getUserWaitlists(
 public ResponseEntity<Object> leaveWaitlist(
         @Parameter(description = "User ID") @PathVariable UUID userId,
         @Parameter(description = "Session ID") @PathVariable UUID sessionId) {
-    
+
     boolean removed = gymReservationService.leaveWaitlist(userId, sessionId);
-    
+
     if (removed) {
         Map<String, String> response = new HashMap<>();
         response.put("message", "Has sido removido de la lista de espera exitosamente");
@@ -881,37 +935,46 @@ public ResponseEntity<Map<LocalDate, Integer>> getOccupancyStatistics(
     // // Reports and analysis endpoints
     // // -----------------------------------------------------
 
-    // @GetMapping("/{userId}/reports/attendance")
-    // @Operation(summary = "Get attendance report", description = "Generates an
-    // attendance report for a user")
-    // public ResponseEntity<AttendanceReportDTO> getUserAttendanceReport(
-    // @Parameter(description = "User ID") @PathVariable Long userId,
-    // @Parameter(description = "Start date") @RequestParam(required = false)
-    // @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-    // @Parameter(description = "End date") @RequestParam(required = false)
-    // @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate);
+//      @GetMapping("/{userId}/reports/attendance")
+//      @Operation(summary = "Get attendance report", description = "Generates an attendance report for a user")
+//      public ResponseEntity<AttendanceReportDTO> getUserAttendanceReport(
+//          @Parameter(description = "User ID") @PathVariable Long userId,
+//          @Parameter(description = "Start date") @RequestParam(required = false)
+//          @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+//          @Parameter(description = "End date") @RequestParam(required = false)
+//          @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
 
-    // @GetMapping("/{userId}/reports/physical-evolution")
-    // @Operation(summary = "Get physical evolution report", description =
-    // "Generates a physical evolution report for a user")
-    // public ResponseEntity<PhysicalEvolutionReportDTO>
-    // getUserPhysicalEvolutionReport(
-    // @Parameter(description = "User ID") @PathVariable Long userId,
-    // @Parameter(description = "Start date") @RequestParam(required = false)
-    // @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-    // @Parameter(description = "End date") @RequestParam(required = false)
-    // @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate);
+//          AttendanceReportDTO attendanceReport = reportService.generateAttendanceReport(userId, startDate, endDate);
 
-    // @GetMapping("/{userId}/reports/routine-compliance")
-    // @Operation(summary = "Get routine compliance report", description =
-    // "Generates a routine compliance report for a user")
-    // public ResponseEntity<RoutineComplianceReportDTO>
-    // getUserRoutineComplianceReport(
-    // @Parameter(description = "User ID") @PathVariable Long userId,
-    // @Parameter(description = "Start date") @RequestParam(required = false)
-    // @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-    // @Parameter(description = "End date") @RequestParam(required = false)
-    // @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate);
+//          return ResponseEntity.ok(attendanceReport);
+//      }
+
+//      @GetMapping("/{userId}/reports/physical-evolution")
+//      @Operation(summary = "Get physical evolution report", description = "Generates a physical evolution report for a user")
+//      public ResponseEntity<PhysicalEvolutionReportDTO> getUserPhysicalEvolutionReport(
+//          @Parameter(description = "User ID") @PathVariable Long userId,
+//          @Parameter(description = "Start date") @RequestParam(required = false)
+//          @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+//          @Parameter(description = "End date") @RequestParam(required = false)
+//          @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+//     PhysicalEvolutionReportDTO physicalEvolutionReport = reportService.generatePhysicalEvolutionReport(userId, startDate, endDate);
+
+//     return ResponseEntity.ok(physicalEvolutionReport);
+// }
+
+//      @GetMapping("/{userId}/reports/routine-compliance")
+//      @Operation(summary = "Get routine compliance report", description = "Generates a routine compliance report for a user")
+//      public ResponseEntity<RoutineComplianceReportDTO> getUserRoutineComplianceReport(
+//          @Parameter(description = "User ID") @PathVariable Long userId,
+//          @Parameter(description = "Start date") @RequestParam(required = false)
+//          @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+//          @Parameter(description = "End date") @RequestParam(required = false)
+//          @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+
+//          RoutineComplianceReportDTO routineComplianceReport = reportService.generateRoutineComplianceReport(userId, startDate, endDate);
+
+//          return ResponseEntity.ok(routineComplianceReport);
+//      }
 
     // // -----------------------------------------------------
     // // Admin/Trainer specific endpoints
