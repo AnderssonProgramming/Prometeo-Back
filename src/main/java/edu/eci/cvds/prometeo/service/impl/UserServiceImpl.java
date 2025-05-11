@@ -17,6 +17,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Implementación del servicio central de usuario que maneja todas las operaciones
@@ -63,6 +64,8 @@ public class UserServiceImpl implements UserService {
     private PhysicalProgressRepository physicalProgressRepository;
     @Autowired
     private RoutineRepository routineRepository;
+    @Autowired
+    private RecommendationRepository recommendationRepository;
     @Autowired
     private EquipmentRepository equipmentRepository;
     @Autowired
@@ -256,16 +259,20 @@ public class UserServiceImpl implements UserService {
         return true;
     }
     
-    // @Override
+    @Override
     public List<Routine> getRecommendedRoutines(UUID userId) {
-        // TODO: Implementar lógica de recomendación
-    //     // Obtener el usuario
-    //     User user = userRepository.findById(userId)
-    //             .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-                
-    //     // Obtener rutinas basadas en objetivos similares o dificultad apropiada
-    //     return routineService.getRoutines(Optional.ofNullable(user.getGoal()), Optional.empty());
-        return null;
+         User user = userRepository.findById(userId)
+                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        List<Recommendation> recommendedRoutines = recommendationRepository.findByUserIdAndActive(userId, true);
+
+        return recommendedRoutines.stream()
+                .map(Recommendation::getRoutine).sorted(Comparator.comparingInt(routine -> getWeightForRoutine(userId, routine))).collect(Collectors.toList());
+    }
+
+    private int getWeightForRoutine(UUID userId, Routine routine) {
+        Optional<Recommendation> recommendation = recommendationRepository.findByUserIdAndRoutineId(userId, routine.getId());
+        return recommendation.map(Recommendation::getWeight).orElse(0);
     }
 
     // ------------- Reservas de gimnasio -------------

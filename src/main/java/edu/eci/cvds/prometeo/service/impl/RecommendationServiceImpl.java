@@ -1,14 +1,21 @@
 package edu.eci.cvds.prometeo.service.impl;
 
-import edu.eci.cvds.prometeo.model.Routine;
-import edu.eci.cvds.prometeo.model.User;
-import edu.eci.cvds.prometeo.model.PhysicalProgress;
-import edu.eci.cvds.prometeo.repository.RoutineRepository;
-import edu.eci.cvds.prometeo.repository.UserRepository;
-import edu.eci.cvds.prometeo.repository.PhysicalProgressRepository;
+import edu.eci.cvds.prometeo.PrometeoExceptions;
+import edu.eci.cvds.prometeo.model.*;
+import edu.eci.cvds.prometeo.openai.OpenAiClient;
+import edu.eci.cvds.prometeo.repository.*;
 import edu.eci.cvds.prometeo.service.RecommendationService;
+import edu.eci.cvds.prometeo.huggingface.HuggingFaceClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -23,127 +30,126 @@ public class RecommendationServiceImpl implements RecommendationService {
 
     @Autowired
     private UserRepository userRepository;
+    @Autowired
+    private GoalRepository goalRepository;
 
     @Autowired
     private PhysicalProgressRepository physicalProgressRepository;
+    @Autowired
+    private RecommendationRepository recommendationRepository;
 
-    // @Override
-    // public List<Map<Routine, Integer>> recommendRoutines(UUID userId, Optional<String> goal, int limit) {
-    //     User user = userRepository.findById(userId).orElseThrow(() -> new IllegalArgumentException("User not found"));
-    //     List<Routine> routines;
-    //     if (goal.isPresent()) {
-    //         routines = routineRepository.findByGoal(goal.get());
-    //     } else {
-    //         routines = routineRepository.findAll();
-    //     }
-    //     // Simple compatibility: routines matching user's goal or profile
-    //     List<Map<Routine, Integer>> recommendations = new ArrayList<>();
-    //     for (Routine routine : routines) {
-    //         int score = calculateRoutineCompatibility(user, routine);
-    //         Map<Routine, Integer> map = new HashMap<>();
-    //         map.put(routine, score);
-    //         recommendations.add(map);
-    //     }
-    //     return recommendations.stream()
-    //             .sorted((a, b) -> b.values().iterator().next() - a.values().iterator().next())
-    //             .limit(limit)
-    //             .collect(Collectors.toList());
-    // }
+    @Autowired
+    private OpenAiClient openAiClient;
 
     @Override
-    public Map<LocalTime, Integer> recommendTimeSlots(UUID userId, LocalDate date) {
-        // Dummy implementation: returns time slots with random occupancy
-        Map<LocalTime, Integer> result = new LinkedHashMap<>();
-        for (int hour = 6; hour <= 22; hour += 2) {
-            result.put(LocalTime.of(hour, 0), new Random().nextInt(100));
+    public List<Map<Routine, Integer>> recommendRoutines(UUID userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new PrometeoExceptions(PrometeoExceptions.NO_EXISTE_USUARIO));
+
+        List<Goal> goals = goalRepository.findByUserIdAndActive(userId, true);
+        List<Routine> allRoutines = routineRepository.findAll();
+
+        String prompt = buildPrompt(goals, allRoutines);
+
+        try {
+            String response = openAiClient.queryModel(prompt);
+            List<UUID> ids = parseUUIDList(response);
+            return buildRecommendations(ids, user);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ArrayList<>();
         }
-        return result;
     }
 
-    // @Override
-    // public Map<UUID, Integer> findSimilarUsers(UUID userId, int limit) {
-    //     User user = userRepository.findById(userId).orElseThrow(() -> new IllegalArgumentException("User not found"));
-    //     List<User> allUsers = userRepository.findAll();
-    //     Map<UUID, Integer> similarityMap = new HashMap<>();
-    //     for (User other : allUsers) {
-    //         if (!other.getId().equals(userId)) {
-    //             int score = calculateUserSimilarity(user, other);
-    //             similarityMap.put(other.getId(), score);
-    //         }
-    //     }
-    //     return similarityMap.entrySet().stream()
-    //             .sorted((a, b) -> b.getValue() - a.getValue())
-    //             .limit(limit)
-    //             .collect(Collectors.toMap(
-    //                     Map.Entry::getKey,
-    //                     Map.Entry::getValue,
-    //                     (a, b) -> a,
-    //                     LinkedHashMap::new
-    //             ));
-    // }
-
-    @Override
-    public List<String> generateImprovementSuggestions(UUID userId) {
-        List<PhysicalProgress> progresses = physicalProgressRepository.findByUserId(userId);
-        List<String> suggestions = new ArrayList<>();
-        if (progresses.isEmpty()) {
-            suggestions.add("Start tracking your progress to receive personalized suggestions.");
-            return suggestions;
+    private String buildPrompt(List<Goal> goals, List<Routine> allRoutines) {
+        StringBuilder prompt = new StringBuilder();
+        prompt.append("Las metas del usuario son:\n");
+        for (Goal goal : goals) {
+            prompt.append("- ").append(goal.getGoal()).append("\n");
         }
-        // Dummy logic: if progress is stagnant, suggest increasing intensity
-        PhysicalProgress last = progresses.get(progresses.size() - 1);
-        // For demonstration, let's assume improvement is based on weight change (you can adjust as needed)
-        double improvement = 0.0;
-        if (progresses.size() > 1) {
-            PhysicalProgress prev = progresses.get(progresses.size() - 2);
-            if (last.getWeight() != null && prev.getWeight() != null) {
-                improvement = last.getWeight().getValue() - prev.getWeight().getValue();
+
+        prompt.append("Las rutinas disponibles son:\n");
+        for (Routine routine : allRoutines) {
+            prompt.append("- ID: ").append(routine.getId())
+                    .append(" | Nombre: ").append(routine.getName())
+                    .append(" | Descripción: ").append(routine.getDescription()).append("\n");
+        }
+
+        prompt.append("Según las metas del usuario, responde solo con los IDs de las rutinas recomendadas, separados por comas (máximo 10 recomendaciones).\n");
+        prompt.append("Ejemplo: 123e4567-e89b-12d3-a456-426614174000, 123e4567-e89b-12d3-a456-426614174001");
+
+        return prompt.toString();
+    }
+
+private List<UUID> parseUUIDList(String response) {
+    List<UUID> result = new ArrayList<>();
+    try {
+        // Extraer la respuesta del formato JSON de OpenAI
+        JsonNode responseJson = new ObjectMapper().readTree(response);
+        String content = responseJson.path("choices").path(0).path("message").path("content").asText("");
+        
+        // Buscar texto que parezca un UUID en la respuesta
+        Pattern uuidPattern = Pattern.compile("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", 
+                                              Pattern.CASE_INSENSITIVE);
+        Matcher matcher = uuidPattern.matcher(content);
+        
+        // Añadir todos los UUIDs encontrados
+        while (matcher.find() && result.size() < 10) {
+            try {
+                UUID uuid = UUID.fromString(matcher.group());
+                result.add(uuid);
+            } catch (IllegalArgumentException e) {
+                // Ignora los formatos UUID inválidos
             }
         }
-        if (improvement < 1.0) {
-            suggestions.add("Try increasing your workout intensity or frequency.");
-        } else {
-            suggestions.add("Keep up the good work!");
+    } catch (Exception e) {
+        // Log the error
+        System.err.println("Error parsing OpenAI response: " + e.getMessage());
+    }
+    
+    return result;
+}
+
+    private List<Map<Routine, Integer>> buildRecommendations(List<UUID> routineIds, User user) {
+        List<Map<Routine, Integer>> recommendedRoutines = new ArrayList<>();
+        for (int i = 0; i < routineIds.size(); i++) {
+            UUID routineId = routineIds.get(i);
+            int weight = 100 - i * 10;
+
+            routineRepository.findById(routineId).ifPresent(routine -> {
+                Optional<Recommendation> existing = recommendationRepository.findByUserIdAndRoutineId(user.getId(), routineId);
+
+                if (existing.isPresent()) {
+                    Recommendation rec = existing.get();
+                    rec.setActive(true);
+                    rec.setWeight(weight);
+                    recommendationRepository.save(rec);
+                } else {
+                    Recommendation newRec = new Recommendation();
+                    newRec.setUser(user);
+                    newRec.setRoutine(routine);
+                    newRec.setWeight(weight);
+                    newRec.setActive(true);
+                    recommendationRepository.save(newRec);
+                }
+
+                Map<Routine, Integer> entry = new HashMap<>();
+                entry.put(routine, weight);
+                recommendedRoutines.add(entry);
+            });
         }
-        return suggestions;
+
+        return recommendedRoutines;
     }
 
     @Override
-    public Map<String, Double> predictProgress(UUID userId, int weeksAhead) {
-        List<PhysicalProgress> progresses = physicalProgressRepository.findByUserId(userId);
-        Map<String, Double> prediction = new HashMap<>();
-        if (progresses.isEmpty()) {
-            prediction.put("weight", 0.0);
-            prediction.put("strength", 0.0);
-            return prediction;
-        }
-        // Dummy linear prediction based on weight (strength is not available in PhysicalProgress, so set to 0)
-        PhysicalProgress last = progresses.get(progresses.size() - 1);
-        double lastWeight = last.getWeight() != null ? last.getWeight().getValue() : 0.0;
-        prediction.put("weight", lastWeight - weeksAhead * 0.5);
-        prediction.put("strength", 0.0);
-        return prediction;
+    public List<Routine> findUserRoutines(UUID userId) {
+        userRepository.findById(userId)
+                .orElseThrow(() -> new PrometeoExceptions(PrometeoExceptions.NO_EXISTE_USUARIO));
+
+        List<Recommendation> userRecommendations = recommendationRepository.findByUserIdAndActive(userId, true);
+        return userRecommendations.stream()
+                .map(Recommendation::getRoutine)
+                .collect(Collectors.toList());
     }
-
-    @Override
-    public int evaluateRoutineEffectiveness(UUID userId, UUID routineId) {
-        // Dummy: returns a random effectiveness score
-        return new Random().nextInt(101);
-    }
-
-    // --- Helper methods ---
-
-    // private int calculateRoutineCompatibility(User user, Routine routine) {
-    //     int score = 0;
-    //     if (routine.getGoal().equalsIgnoreCase(user.getGoal())) score += 50;
-    //     // Add more sophisticated logic as needed
-    //     return score + new Random().nextInt(50);
-    // }
-
-    // private int calculateUserSimilarity(User u1, User u2) {
-    //     int score = 0;
-    //     if (Objects.equals(u1.getGoal(), u2.getGoal())) score += 50;
-    //     // Add more sophisticated logic as needed
-    //     return score + new Random().nextInt(50);
-    // }
 }
