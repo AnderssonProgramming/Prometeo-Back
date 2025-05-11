@@ -935,46 +935,46 @@ public ResponseEntity<Map<LocalDate, Integer>> getOccupancyStatistics(
     // // Reports and analysis endpoints
     // // -----------------------------------------------------
 
-     @GetMapping("/{userId}/reports/attendance")
-     @Operation(summary = "Get attendance report", description = "Generates an attendance report for a user")
-     public ResponseEntity<AttendanceReportDTO> getUserAttendanceReport(
-         @Parameter(description = "User ID") @PathVariable Long userId,
-         @Parameter(description = "Start date") @RequestParam(required = false)
-         @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-         @Parameter(description = "End date") @RequestParam(required = false)
-         @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+//      @GetMapping("/{userId}/reports/attendance")
+//      @Operation(summary = "Get attendance report", description = "Generates an attendance report for a user")
+//      public ResponseEntity<AttendanceReportDTO> getUserAttendanceReport(
+//          @Parameter(description = "User ID") @PathVariable Long userId,
+//          @Parameter(description = "Start date") @RequestParam(required = false)
+//          @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+//          @Parameter(description = "End date") @RequestParam(required = false)
+//          @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
 
-         AttendanceReportDTO attendanceReport = reportService.generateAttendanceReport(userId, startDate, endDate);
+//          AttendanceReportDTO attendanceReport = reportService.generateAttendanceReport(userId, startDate, endDate);
 
-         return ResponseEntity.ok(attendanceReport);
-     }
+//          return ResponseEntity.ok(attendanceReport);
+//      }
 
-     @GetMapping("/{userId}/reports/physical-evolution")
-     @Operation(summary = "Get physical evolution report", description = "Generates a physical evolution report for a user")
-     public ResponseEntity<PhysicalEvolutionReportDTO> getUserPhysicalEvolutionReport(
-         @Parameter(description = "User ID") @PathVariable Long userId,
-         @Parameter(description = "Start date") @RequestParam(required = false)
-         @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-         @Parameter(description = "End date") @RequestParam(required = false)
-         @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
-    PhysicalEvolutionReportDTO physicalEvolutionReport = reportService.generatePhysicalEvolutionReport(userId, startDate, endDate);
+//      @GetMapping("/{userId}/reports/physical-evolution")
+//      @Operation(summary = "Get physical evolution report", description = "Generates a physical evolution report for a user")
+//      public ResponseEntity<PhysicalEvolutionReportDTO> getUserPhysicalEvolutionReport(
+//          @Parameter(description = "User ID") @PathVariable Long userId,
+//          @Parameter(description = "Start date") @RequestParam(required = false)
+//          @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+//          @Parameter(description = "End date") @RequestParam(required = false)
+//          @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+//     PhysicalEvolutionReportDTO physicalEvolutionReport = reportService.generatePhysicalEvolutionReport(userId, startDate, endDate);
 
-    return ResponseEntity.ok(physicalEvolutionReport);
-}
+//     return ResponseEntity.ok(physicalEvolutionReport);
+// }
 
-     @GetMapping("/{userId}/reports/routine-compliance")
-     @Operation(summary = "Get routine compliance report", description = "Generates a routine compliance report for a user")
-     public ResponseEntity<RoutineComplianceReportDTO> getUserRoutineComplianceReport(
-         @Parameter(description = "User ID") @PathVariable Long userId,
-         @Parameter(description = "Start date") @RequestParam(required = false)
-         @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-         @Parameter(description = "End date") @RequestParam(required = false)
-         @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+//      @GetMapping("/{userId}/reports/routine-compliance")
+//      @Operation(summary = "Get routine compliance report", description = "Generates a routine compliance report for a user")
+//      public ResponseEntity<RoutineComplianceReportDTO> getUserRoutineComplianceReport(
+//          @Parameter(description = "User ID") @PathVariable Long userId,
+//          @Parameter(description = "Start date") @RequestParam(required = false)
+//          @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+//          @Parameter(description = "End date") @RequestParam(required = false)
+//          @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
 
-         RoutineComplianceReportDTO routineComplianceReport = reportService.generateRoutineComplianceReport(userId, startDate, endDate);
+//          RoutineComplianceReportDTO routineComplianceReport = reportService.generateRoutineComplianceReport(userId, startDate, endDate);
 
-         return ResponseEntity.ok(routineComplianceReport);
-     }
+//          return ResponseEntity.ok(routineComplianceReport);
+//      }
 
     // // -----------------------------------------------------
     // // Admin/Trainer specific endpoints

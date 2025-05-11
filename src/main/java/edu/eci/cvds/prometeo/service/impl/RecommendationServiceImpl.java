@@ -9,6 +9,14 @@ import edu.eci.cvds.prometeo.huggingface.HuggingFaceClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.*;
@@ -73,13 +81,34 @@ public class RecommendationServiceImpl implements RecommendationService {
         return prompt.toString();
     }
 
-    private List<UUID> parseUUIDList(String response) {
-        return Arrays.stream(response.split(","))
-                .map(String::trim)
-                .filter(s -> !s.isEmpty())
-                .map(UUID::fromString)
-                .collect(Collectors.toList());
+private List<UUID> parseUUIDList(String response) {
+    List<UUID> result = new ArrayList<>();
+    try {
+        // Extraer la respuesta del formato JSON de OpenAI
+        JsonNode responseJson = new ObjectMapper().readTree(response);
+        String content = responseJson.path("choices").path(0).path("message").path("content").asText("");
+        
+        // Buscar texto que parezca un UUID en la respuesta
+        Pattern uuidPattern = Pattern.compile("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", 
+                                              Pattern.CASE_INSENSITIVE);
+        Matcher matcher = uuidPattern.matcher(content);
+        
+        // Añadir todos los UUIDs encontrados
+        while (matcher.find() && result.size() < 10) {
+            try {
+                UUID uuid = UUID.fromString(matcher.group());
+                result.add(uuid);
+            } catch (IllegalArgumentException e) {
+                // Ignora los formatos UUID inválidos
+            }
+        }
+    } catch (Exception e) {
+        // Log the error
+        System.err.println("Error parsing OpenAI response: " + e.getMessage());
     }
+    
+    return result;
+}
 
     private List<Map<Routine, Integer>> buildRecommendations(List<UUID> routineIds, User user) {
         List<Map<Routine, Integer>> recommendedRoutines = new ArrayList<>();

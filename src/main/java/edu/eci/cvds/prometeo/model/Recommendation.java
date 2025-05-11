@@ -16,9 +16,9 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Recommendation extends BaseEntity {
-    @Id
-    @GeneratedValue
-    private UUID id;
+    // @Id
+    // @GeneratedValue
+    // private UUID id;
 
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
@@ -33,4 +33,45 @@ public class Recommendation extends BaseEntity {
 
     @Column(name = "weight", nullable = false)
     private int weight;
+
+
+    // public UUID getId() {
+    //     return id;
+    // }
+
+    // public void setId(UUID id) {
+    //     this.id = id;
+    // }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
+
+    public Routine getRoutine() {
+        return routine;
+    }
+
+    public void setRoutine(Routine routine) {
+        this.routine = routine;
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
+    }
+
+    public int getWeight() {
+        return weight;
+    }
+
+    public void setWeight(int weight) {
+        this.weight = weight;
+    }
 }
