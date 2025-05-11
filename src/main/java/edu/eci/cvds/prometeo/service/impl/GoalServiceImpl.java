@@ -90,5 +90,13 @@ public class GoalServiceImpl implements GoalService {
                 .orElseThrow(() -> new PrometeoExceptions(PrometeoExceptions.NO_EXISTE_META));
         goal.setActive(false);
         goalRepository.save(goal);
+
+        UUID userId = goal.getUserId();
+
+        List<Recommendation> recommendations = recommendationRepository.findByUserIdAndActive(userId, true);
+        recommendations.forEach(r -> r.setActive(false));
+        recommendationRepository.saveAll(recommendations);
+
+        recommendationService.recommendRoutines(userId);
     }
 }
