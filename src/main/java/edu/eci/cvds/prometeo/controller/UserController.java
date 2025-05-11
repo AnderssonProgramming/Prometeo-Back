@@ -661,6 +661,175 @@ public ResponseEntity<Object> leaveWaitlist(
         return ResponseEntity.notFound().build();
     }
 }
+
+
+// -----------------------------------------------------
+// Gym session management endpoints (trainers)
+// -----------------------------------------------------
+
+@Autowired
+private GymSessionService gymSessionService;
+
+@PostMapping("/trainer/sessions")
+@Operation(summary = "Create gym session", description = "Creates a new gym session for users to book")
+@ApiResponse(responseCode = "201", description = "Session created successfully")
+@PreAuthorize("hasRole('TRAINER') or hasRole('ADMIN')")
+public ResponseEntity<Map<String, Object>> createSession(
+        @RequestBody Map<String, Object> sessionData) {
+    
+    try {
+        LocalDate date = LocalDate.parse((String) sessionData.get("date"));
+        LocalTime startTime = LocalTime.parse((String) sessionData.get("startTime"));
+        LocalTime endTime = LocalTime.parse((String) sessionData.get("endTime"));
+        int capacity = (Integer) sessionData.get("capacity");
+        UUID trainerId = UUID.fromString((String) sessionData.get("trainerId"));
+        Optional<String> description = Optional.ofNullable((String) sessionData.get("description"));
+        
+        UUID sessionId = gymSessionService.createSession(
+                date, startTime, endTime, capacity, description, trainerId);
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("sessionId", sessionId);
+        response.put("message", "Sesión creada exitosamente");
+        
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
+    } catch (Exception e) {
+        Map<String, Object> error = new HashMap<>();
+        error.put("error", e.getMessage());
+        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+    }
+}
+
+@PutMapping("/trainer/sessions/{sessionId}")
+@Operation(summary = "Update gym session", description = "Updates an existing gym session")
+@ApiResponse(responseCode = "200", description = "Session updated successfully")
+@ApiResponse(responseCode = "404", description = "Session not found")
+@PreAuthorize("hasRole('TRAINER') or hasRole('ADMIN')")
+public ResponseEntity<Object> updateSession(
+        @Parameter(description = "Session ID") @PathVariable UUID sessionId,
+        @RequestBody Map<String, Object> sessionData) {
+    
+    try {
+        LocalDate date = LocalDate.parse((String) sessionData.get("date"));
+        LocalTime startTime = LocalTime.parse((String) sessionData.get("startTime"));
+        LocalTime endTime = LocalTime.parse((String) sessionData.get("endTime"));
+        int capacity = (Integer) sessionData.get("capacity");
+        UUID trainerId = UUID.fromString((String) sessionData.get("trainerId"));
+        
+        boolean updated = gymSessionService.updateSession(
+                sessionId, date, startTime, endTime, capacity, trainerId);
+        
+        if (updated) {
+            Map<String, String> response = new HashMap<>();
+            response.put("message", "Sesión actualizada exitosamente");
+            return ResponseEntity.ok(response);
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    } catch (Exception e) {
+        Map<String, String> error = new HashMap<>();
+        error.put("error", e.getMessage());
+        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+    }
+}
+
+@DeleteMapping("/trainer/sessions/{sessionId}")
+@Operation(summary = "Cancel gym session", description = "Cancels an existing gym session")
+@ApiResponse(responseCode = "200", description = "Session cancelled successfully")
+@ApiResponse(responseCode = "404", description = "Session not found")
+@PreAuthorize("hasRole('TRAINER') or hasRole('ADMIN')")
+public ResponseEntity<Object> cancelSession(
+        @Parameter(description = "Session ID") @PathVariable UUID sessionId,
+        @RequestBody(required = false) Map<String, String> requestBody) {
+    
+    try {
+        String reason = (requestBody != null) ? requestBody.get("reason") : null;
+        UUID trainerId = UUID.fromString(requestBody != null ? requestBody.get("trainerId") : "");
+        
+        boolean cancelled = gymSessionService.cancelSession(sessionId, reason, trainerId);
+        
+        if (cancelled) {
+            Map<String, String> response = new HashMap<>();
+            response.put("message", "Sesión cancelada exitosamente");
+            return ResponseEntity.ok(response);
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    } catch (Exception e) {
+        Map<String, String> error = new HashMap<>();
+        error.put("error", e.getMessage());
+        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+    }
+}
+
+@GetMapping("/trainer/sessions")
+@Operation(summary = "Get sessions by date", description = "Retrieves all gym sessions for a specific date")
+@ApiResponse(responseCode = "200", description = "Sessions retrieved successfully")
+@PreAuthorize("hasRole('TRAINER') or hasRole('ADMIN')")
+public ResponseEntity<List<Object>> getSessionsByDate(
+        @Parameter(description = "Date to check") 
+        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+    
+    List<Object> sessions = gymSessionService.getSessionsByDate(date);
+    return ResponseEntity.ok(sessions);
+}
+
+@GetMapping("/trainer/{trainerId}/sessions")
+@Operation(summary = "Get trainer's sessions", description = "Retrieves all sessions created by a specific trainer")
+@ApiResponse(responseCode = "200", description = "Sessions retrieved successfully")
+@PreAuthorize("hasRole('TRAINER') or hasRole('ADMIN')")
+public ResponseEntity<List<Object>> getTrainerSessions(
+        @Parameter(description = "Trainer ID") @PathVariable UUID trainerId) {
+    
+    List<Object> sessions = gymSessionService.getSessionsByTrainer(trainerId);
+    return ResponseEntity.ok(sessions);
+}
+
+@PostMapping("/trainer/sessions/recurring")
+@Operation(summary = "Create recurring sessions", description = "Creates recurring gym sessions on specified days")
+@ApiResponse(responseCode = "201", description = "Recurring sessions created successfully")
+@PreAuthorize("hasRole('TRAINER') or hasRole('ADMIN')")
+public ResponseEntity<Map<String, Object>> createRecurringSessions(
+        @RequestBody Map<String, Object> recurringData) {
+    
+    try {
+        int dayOfWeek = (Integer) recurringData.get("dayOfWeek"); // 1=Monday, 7=Sunday
+        LocalTime startTime = LocalTime.parse((String) recurringData.get("startTime"));
+        LocalTime endTime = LocalTime.parse((String) recurringData.get("endTime"));
+        int capacity = (Integer) recurringData.get("capacity");
+        LocalDate startDate = LocalDate.parse((String) recurringData.get("startDate"));
+        LocalDate endDate = LocalDate.parse((String) recurringData.get("endDate"));
+        UUID trainerId = UUID.fromString((String) recurringData.get("trainerId"));
+        Optional<String> description = Optional.ofNullable((String) recurringData.get("description"));
+        
+        int sessionsCreated = gymSessionService.configureRecurringSessions(
+                dayOfWeek, startTime, endTime, capacity, description, trainerId, startDate, endDate);
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("sessionsCreated", sessionsCreated);
+        response.put("message", "Sesiones recurrentes creadas exitosamente");
+        
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
+    } catch (Exception e) {
+        Map<String, Object> error = new HashMap<>();
+        error.put("error", e.getMessage());
+        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+    }
+}
+
+@GetMapping("/trainer/sessions/stats")
+@Operation(summary = "Get occupancy statistics", description = "Retrieves occupancy statistics for gym sessions")
+@ApiResponse(responseCode = "200", description = "Statistics retrieved successfully")
+@PreAuthorize("hasRole('TRAINER') or hasRole('ADMIN')")
+public ResponseEntity<Map<LocalDate, Integer>> getOccupancyStatistics(
+        @Parameter(description = "Start date") 
+        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+        @Parameter(description = "End date") 
+        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+    
+    Map<LocalDate, Integer> statistics = gymSessionService.getOccupancyStatistics(startDate, endDate);
+    return ResponseEntity.ok(statistics);
+}
     // // -----------------------------------------------------
     // // Equipment reservations endpoints
     // // -----------------------------------------------------
