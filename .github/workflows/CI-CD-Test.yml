@@ -61,3 +61,4 @@ jobs:
           app-name: crono       # Reemplaza con el nombre de tu App Service para testing
           publish-profile: ${{ secrets.AZURETESTENVIRONMENT }}
           package: '*.jar'
+
