@@ -38,7 +38,7 @@ jobs:
           distribution: 'temurin'
           cache: maven
       - name: Maven Verify
-        run: mvn verify
+        run: mvn verify -Dspring.profiles.active=test
       - name: Ejecutar Tests de Reserva
         run: |
           echo "Ejecutando test: Dado que tengo 1 reserva registrada, Cuando lo consulto a nivel de servicio, Entonces la consulta será exitosa validando el campo id."
@@ -59,5 +59,5 @@ jobs:
         uses: azure/webapps-deploy@v2
         with:
           app-name: crono       # Reemplaza con el nombre de tu App Service para testing
-          publish-profile: ${{ secrets.AZURETESTENVIRONMENT  }}
+          publish-profile: ${{ secrets.AZURETESTENVIRONMENT }}
           package: '*.jar'
