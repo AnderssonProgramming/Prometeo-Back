@@ -43,7 +43,7 @@ public interface UserService {
      * @param id ID del usuario
      * @return Entidad de usuario
      */
-    User getUserById(String institutionalId);
+    User getUserById(UUID id);
 
     /**
      * Obtener usuario por ID institucional

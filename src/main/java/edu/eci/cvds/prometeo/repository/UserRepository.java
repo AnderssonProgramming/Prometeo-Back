@@ -12,6 +12,13 @@ import java.util.UUID;
 public interface UserRepository extends JpaRepository<User, UUID> {
     
     /**
+     * Finds a user by their ID.
+     * @param id the ID of the user
+     * @return an Optional containing the user if found, or empty if not found
+     */
+    Optional<User> findById(UUID id);
+
+    /**
      * Finds all users in the system.
      */
     List<User> findAll();
@@ -22,6 +29,12 @@ public interface UserRepository extends JpaRepository<User, UUID> {
      * @return a list of users with the specified role
      */
     List<User> findByRole(String role);
+
+    /**
+     * Finds a user by their institutional ID.
+     * @param institutionalId the institutional ID of the user
+     * @return an Optional containing the user if found, or empty if not found
+     */
     Optional<User> findByInstitutionalId(String institutionalId);
 
     /**

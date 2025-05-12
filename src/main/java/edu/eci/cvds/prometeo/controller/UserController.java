@@ -90,7 +90,7 @@ public class UserController {
         @ApiResponse(responseCode = "404", description = "User not found")
     })
     public ResponseEntity<?> getUsers(
-            @Parameter(description = "User ID") @RequestParam(required = false) String id,
+            @Parameter(description = "User ID") @RequestParam(required = false) UUID id,
             @Parameter(description = "Institutional ID") @RequestParam(required = false) String institutionalId,
             @Parameter(description = "Role name") @RequestParam(required = false) String role) {
 

@@ -73,9 +73,9 @@ public class UserServiceImpl implements UserService {
     // ------------- Operaciones básicas de usuario -------------
 
     @Override
-    public User getUserById(String institutionalId) {
-        return userRepository.findByInstitutionalId(institutionalId)
-                .orElseThrow(() -> new RuntimeException("User not found with id: " + institutionalId));
+    public User getUserById(UUID id) {
+        return userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
     }
 
     @Override
