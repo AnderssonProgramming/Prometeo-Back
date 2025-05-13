@@ -19,4 +19,28 @@ public interface NotificationService {
      * @return true if notification was sent successfully
      */
     boolean sendNotification(UUID userId, String title, String message, String type, Optional<UUID> referenceId);
+
+    /**
+     * Envía una notificación sobre liberación de cupo
+     * @param userId ID del usuario a notificar
+     * @param sessionId ID de la sesión disponible
+     * @return true si la notificación fue enviada correctamente
+     */
+    boolean sendSpotAvailableNotification(UUID userId, UUID sessionId);
+    
+    /**
+     * Envía una confirmación de reserva
+     * @param userId ID del usuario
+     * @param reservationId ID de la reserva
+     * @return true si la notificación fue enviada correctamente
+     */
+    boolean sendReservationConfirmation(UUID userId, UUID reservationId);
+    
+    /**
+     * Envía un recordatorio de sesión próxima
+     * @param userId ID del usuario
+     * @param reservationId ID de la reserva
+     * @return true si la notificación fue enviada correctamente
+     */
+    boolean sendSessionReminder(UUID userId, UUID reservationId);
 }

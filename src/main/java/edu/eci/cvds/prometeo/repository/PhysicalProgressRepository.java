@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -15,9 +16,8 @@ public interface PhysicalProgressRepository extends JpaRepository<PhysicalProgre
     
     List<PhysicalProgress> findByUserId(UUID userId);
     
-    @Query("SELECT p FROM PhysicalProgress p WHERE p.userId = :userId ORDER BY p.recordDate DESC")
     List<PhysicalProgress> findByUserIdOrderByRecordDateDesc(UUID userId);
     
-    @Query("SELECT p FROM PhysicalProgress p WHERE p.userId = :userId ORDER BY p.recordDate DESC LIMIT 1")
-    Optional<PhysicalProgress> findLatestByUserId(UUID userId);
+    List<PhysicalProgress> findByUserIdAndRecordDateBetween(
+            UUID userId, LocalDate startDate, LocalDate endDate);
 }
