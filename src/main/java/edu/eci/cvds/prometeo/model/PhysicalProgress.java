@@ -26,8 +26,8 @@ public class PhysicalProgress extends AuditableEntity {
     private LocalDate recordDate;
 
     @ManyToOne(fetch = FetchType.LAZY)
-@JoinColumn(name = "active_routine_id")
-private Routine activeRoutine;
+    @JoinColumn(name = "active_routine_id")
+    private Routine activeRoutine;
 
     @Embedded
     private Weight weight;
