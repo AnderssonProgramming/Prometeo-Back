@@ -930,21 +930,69 @@ public class UserController {
     }
 
     @GetMapping("/gym/sessions/{sessionId}")
-@Operation(summary = "Get session by ID", description = "Retrieves details of a specific gym session")
-@ApiResponse(responseCode = "200", description = "Session found")
-@ApiResponse(responseCode = "404", description = "Session not found")
-public ResponseEntity<Object> getSessionById(
-        @Parameter(description = "Session ID") @PathVariable UUID sessionId) {
-    
-    try {
-        Object session = gymSessionService.getSessionById(sessionId);
-        return ResponseEntity.ok(session);
-    } catch (Exception e) {
-        Map<String, String> error = new HashMap<>();
-        error.put("error", e.getMessage());
-        return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
+    @Operation(summary = "Get session by ID", description = "Retrieves details of a specific gym session")
+    @ApiResponse(responseCode = "200", description = "Session found")
+    @ApiResponse(responseCode = "404", description = "Session not found")
+    public ResponseEntity<Object> getSessionById(
+            @Parameter(description = "Session ID") @PathVariable UUID sessionId) {
+
+        try {
+            Object session = gymSessionService.getSessionById(sessionId);
+            return ResponseEntity.ok(session);
+        } catch (Exception e) {
+            Map<String, String> error = new HashMap<>();
+            error.put("error", e.getMessage());
+            return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
+        }
     }
-}
+
+     // -----------------------------------------------------
+     // Reports and analysis endpoints
+     // -----------------------------------------------------
+//
+//     @GetMapping("/{userId}/reports/attendance")
+//     @Operation(summary = "Get attendance report", description = "Generates an attendance report for a user")
+//     public ResponseEntity<AttendanceReportDTO> getUserAttendanceReport(
+//         @Parameter(description = "User ID") @PathVariable Long userId,
+//         @Parameter(description = "Start date") @RequestParam(required = false)
+//         @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+//         @Parameter(description = "End date") @RequestParam(required = false)
+//         @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+//         AttendanceReportDTO attendanceReport =
+//         reportService.generateAttendanceReport(userId, startDate, endDate);
+//
+//         return ResponseEntity.ok(attendanceReport);
+//     }
+//
+//     @GetMapping("/{userId}/reports/physical-evolution")
+//     @Operation(summary = "Get physical evolution report", description = "Generates a physical evolution report for a user")
+//     public ResponseEntity<PhysicalEvolutionReportDTO> getUserPhysicalEvolutionReport(
+//         @Parameter(description = "User ID") @PathVariable Long userId,
+//         @Parameter(description = "Start date") @RequestParam(required = false)
+//         @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+//         @Parameter(description = "End date") @RequestParam(required = false)
+//         @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+//         PhysicalEvolutionReportDTO physicalEvolutionReport =
+//         reportService.generatePhysicalEvolutionReport(userId, startDate, endDate);
+//
+//         return ResponseEntity.ok(physicalEvolutionReport);
+//     }
+//
+//     @GetMapping("/{userId}/reports/routine-compliance")
+//     @Operation(summary = "Get routine compliance report", description = "Generates a routine compliance report for a user")
+//     public ResponseEntity<RoutineComplianceReportDTO> getUserRoutineComplianceReport(
+//         @Parameter(description = "User ID") @PathVariable Long userId,
+//         @Parameter(description = "Start date") @RequestParam(required = false)
+//         @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+//         @Parameter(description = "End date") @RequestParam(required = false)
+//         @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+//
+//         RoutineComplianceReportDTO routineComplianceReport =
+//         reportService.generateRoutineComplianceReport(userId, startDate, endDate);
+//
+//         return ResponseEntity.ok(routineComplianceReport);
+//     }
+
     // // ------------------------------------------------------
     // // Equipment reservations endpoints
     // // -----------------------------------------------------
@@ -973,77 +1021,6 @@ public ResponseEntity<Object> getSessionById(
     // @Parameter(description = "Reservation ID") @PathVariable Long reservationId,
     // @Parameter(description = "Equipment reservation ID") @PathVariable Long
     // equipmentReservationId);
-
-    // // -----------------------------------------------------
-    // // Recommendations endpoints
-    // // -----------------------------------------------------
-
-    // @GetMapping("/{userId}/recommended-routines")
-    // @Operation(summary = "Get recommended routines", description = "Retrieves
-    // personalized routine recommendations for a user")
-    // public ResponseEntity<List<Routine>>
-    // getRecommendedRoutines(@Parameter(description = "User ID") @PathVariable Long
-    // userId);
-
-    // @GetMapping("/{userId}/recommended-classes")
-    // @Operation(summary = "Get recommended classes", description = "Retrieves
-    // personalized class recommendations for a user")
-    // public ResponseEntity<List<ClassRecommendationDTO>>
-    // getRecommendedClasses(@Parameter(description = "User ID") @PathVariable Long
-    // userId);
-
-    // // -----------------------------------------------------
-    // // Reports and analysis endpoints
-    // // -----------------------------------------------------
-
-    // @GetMapping("/{userId}/reports/attendance")
-    // @Operation(summary = "Get attendance report", description = "Generates an
-    // attendance report for a user")
-    // public ResponseEntity<AttendanceReportDTO> getUserAttendanceReport(
-    // @Parameter(description = "User ID") @PathVariable Long userId,
-    // @Parameter(description = "Start date") @RequestParam(required = false)
-    // @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-    // @Parameter(description = "End date") @RequestParam(required = false)
-    // @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
-
-    // AttendanceReportDTO attendanceReport =
-    // reportService.generateAttendanceReport(userId, startDate, endDate);
-
-    // return ResponseEntity.ok(attendanceReport);
-    // }
-
-    // @GetMapping("/{userId}/reports/physical-evolution")
-    // @Operation(summary = "Get physical evolution report", description =
-    // "Generates a physical evolution report for a user")
-    // public ResponseEntity<PhysicalEvolutionReportDTO>
-    // getUserPhysicalEvolutionReport(
-    // @Parameter(description = "User ID") @PathVariable Long userId,
-    // @Parameter(description = "Start date") @RequestParam(required = false)
-    // @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-    // @Parameter(description = "End date") @RequestParam(required = false)
-    // @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
-    // PhysicalEvolutionReportDTO physicalEvolutionReport =
-    // reportService.generatePhysicalEvolutionReport(userId, startDate, endDate);
-
-    // return ResponseEntity.ok(physicalEvolutionReport);
-    // }
-
-    // @GetMapping("/{userId}/reports/routine-compliance")
-    // @Operation(summary = "Get routine compliance report", description =
-    // "Generates a routine compliance report for a user")
-    // public ResponseEntity<RoutineComplianceReportDTO>
-    // getUserRoutineComplianceReport(
-    // @Parameter(description = "User ID") @PathVariable Long userId,
-    // @Parameter(description = "Start date") @RequestParam(required = false)
-    // @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-    // @Parameter(description = "End date") @RequestParam(required = false)
-    // @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
-
-    // RoutineComplianceReportDTO routineComplianceReport =
-    // reportService.generateRoutineComplianceReport(userId, startDate, endDate);
-
-    // return ResponseEntity.ok(routineComplianceReport);
-    // }
 
     // // -----------------------------------------------------
     // // Admin/Trainer specific endpoints

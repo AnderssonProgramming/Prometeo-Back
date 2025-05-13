@@ -3,7 +3,6 @@ package edu.eci.cvds.prometeo.service.impl;
 import edu.eci.cvds.prometeo.PrometeoExceptions;
 import edu.eci.cvds.prometeo.model.Goal;
 import edu.eci.cvds.prometeo.model.Recommendation;
-import edu.eci.cvds.prometeo.model.User;
 import edu.eci.cvds.prometeo.repository.GoalRepository;
 import edu.eci.cvds.prometeo.repository.RecommendationRepository;
 import edu.eci.cvds.prometeo.repository.UserRepository;
@@ -17,6 +16,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+
+/**
+ * Implementation of the {@link GoalService} interface.
+ * Handles the creation, update, retrieval, and soft deletion of user goals,
+ * and manages the regeneration of routine recommendations accordingly.
+ */
 @Service
 public class GoalServiceImpl implements GoalService {
     @Autowired
@@ -31,11 +36,24 @@ public class GoalServiceImpl implements GoalService {
     @Autowired
     private RecommendationService recommendationService;
 
+    /**
+     * Retrieves all active goals for a specific user.
+     *
+     * @param userId The UUID of the user.
+     * @return A list of the user's active goals.
+     */
     @Override
     public List<Goal> getGoalsByUser(UUID userId) {
         return goalRepository.findByUserIdAndActive(userId, true);
     }
 
+    /**
+     * Adds new goals to the specified user and regenerates recommendations.
+     * Existing recommendations are deactivated before new ones are generated.
+     *
+     * @param userId The UUID of the user.
+     * @param goals  A list of goal descriptions to add.
+     */
     @Override
     public void addUserGoal(UUID userId, List<String> goals) {
         userRepository.findById(userId)
@@ -56,7 +74,12 @@ public class GoalServiceImpl implements GoalService {
         recommendationService.recommendRoutines(userId);
     }
 
-
+    /**
+     * Updates the text of existing user goals and regenerates recommendations.
+     * All current recommendations are deactivated and refreshed.
+     *
+     * @param updatedGoals A map of goal IDs and their new descriptions.
+     */
     @Transactional
     @Override
     public void updateUserGoal(Map<UUID, String> updatedGoals) {
@@ -84,6 +107,12 @@ public class GoalServiceImpl implements GoalService {
         recommendationService.recommendRoutines(userId);
     }
 
+    /**
+     * Soft deletes a goal by setting its active flag to false.
+     * Also deactivates existing recommendations and generates new ones.
+     *
+     * @param goalId The UUID of the goal to delete.
+     */
     @Override
     public void deleteGoal(UUID goalId) {
         Goal goal = goalRepository.findById(goalId)
