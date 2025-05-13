@@ -49,4 +49,52 @@ public class ProgressHistory extends BaseEntity {
         }
         return (calculateChange() / Math.abs(oldValue)) * 100;
     }
+
+    public UUID getUserId() {
+        return userId;
+    }
+
+    public void setUserId(UUID userId) {
+        this.userId = userId;
+    }
+
+    public LocalDate getRecordDate() {
+        return recordDate;
+    }
+
+    public void setRecordDate(LocalDate recordDate) {
+        this.recordDate = recordDate;
+    }
+
+    public String getMeasureType() {
+        return measureType;
+    }
+
+    public void setMeasureType(String measureType) {
+        this.measureType = measureType;
+    }
+
+    public double getOldValue() {
+        return oldValue;
+    }
+
+    public void setOldValue(double oldValue) {
+        this.oldValue = oldValue;
+    }
+
+    public double getNewValue() {
+        return newValue;
+    }
+
+    public void setNewValue(double newValue) {
+        this.newValue = newValue;
+    }
+
+    public String getNotes() {
+        return notes;
+    }
+
+    public void setNotes(String notes) {
+        this.notes = notes;
+    }
 }

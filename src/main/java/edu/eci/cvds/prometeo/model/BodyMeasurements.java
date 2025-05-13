@@ -58,4 +58,61 @@ public class BodyMeasurements {
         // Implementación simplificada
         return waistCircumference < previous.waistCircumference;
     }
+
+
+    public double getHeight() {
+        return height;
+    }
+
+    public void setHeight(double height) {
+        this.height = height;
+    }
+
+    public double getChestCircumference() {
+        return chestCircumference;
+    }
+
+    public void setChestCircumference(double chestCircumference) {
+        this.chestCircumference = chestCircumference;
+    }
+
+    public double getWaistCircumference() {
+        return waistCircumference;
+    }
+
+    public void setWaistCircumference(double waistCircumference) {
+        this.waistCircumference = waistCircumference;
+    }
+
+    public double getHipCircumference() {
+        return hipCircumference;
+    }
+
+    public void setHipCircumference(double hipCircumference) {
+        this.hipCircumference = hipCircumference;
+    }
+
+    public double getBicepsCircumference() {
+        return bicepsCircumference;
+    }
+
+    public void setBicepsCircumference(double bicepsCircumference) {
+        this.bicepsCircumference = bicepsCircumference;
+    }
+
+    public double getThighCircumference() {
+        return thighCircumference;
+    }
+
+    public void setThighCircumference(double thighCircumference) {
+        this.thighCircumference = thighCircumference;
+    }
+
+    public Map<String, Double> getAdditionalMeasures() {
+        return additionalMeasures;
+    }
+
+    public void setAdditionalMeasures(Map<String, Double> additionalMeasures) {
+        this.additionalMeasures = additionalMeasures;
+    }
 }

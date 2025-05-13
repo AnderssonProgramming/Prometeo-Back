@@ -32,20 +32,73 @@ public class UserRoutine extends BaseEntity {
     @Column(name = "end_date")
     private LocalDate endDate;
 
-    @Column(name = "is_active", nullable = false)
-    private boolean isActive;
+    @Column(name = "active", nullable = false)
+    private boolean active;
 
-    public void activate() {
-        this.isActive = true;
-    }
+    // public void activate() {
+    //     this.isActive = true;
+    // }
 
-    public void deactivate() {
-        this.isActive = false;
-    }
+    // public void deactivate() {
+    //     this.isActive = false;
+    // }
 
     public void extend(int days) {
         if (this.endDate != null) {
             this.endDate = this.endDate.plusDays(days);
         }
+    }
+    
+
+    @Column(name = "start_date")
+    private LocalDate startDate;
+
+    public LocalDate getStartDate() {
+        return startDate;
+    }
+
+    public void setStartDate(LocalDate startDate) {
+        this.startDate = startDate;
+    }
+
+
+    public UUID getUserId() {
+        return userId;
+    }
+
+    public void setUserId(UUID userId) {
+        this.userId = userId;
+    }
+
+    public UUID getRoutineId() {
+        return routineId;
+    }
+
+    public void setRoutineId(UUID routineId) {
+        this.routineId = routineId;
+    }
+
+    public LocalDate getAssignmentDate() {
+        return assignmentDate;
+    }
+
+    public void setAssignmentDate(LocalDate assignmentDate) {
+        this.assignmentDate = assignmentDate;
+    }
+
+    public LocalDate getEndDate() {
+        return endDate;
+    }
+
+    public void setEndDate(LocalDate endDate) {
+        this.endDate = endDate;
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
     }
 }

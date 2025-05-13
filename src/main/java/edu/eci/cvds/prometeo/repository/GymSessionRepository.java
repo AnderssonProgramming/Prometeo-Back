@@ -5,17 +5,47 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
 public interface GymSessionRepository extends JpaRepository<GymSession, UUID> {
     
-    List<GymSession> findBySessionDateBetween(LocalDate start, LocalDate end);
+    /**
+     * Find sessions by date ordered by start time
+     */
+    List<GymSession> findBySessionDateOrderByStartTime(LocalDate date);
     
-    List<GymSession> findByTrainerIdAndSessionDate(UUID trainerId, LocalDate date);
+    /**
+     * Find sessions by date and trainer ID
+     */
+    List<GymSession> findBySessionDateAndTrainerId(LocalDate date, UUID trainerId);
     
-    List<GymSession> findBySessionDateAndDeletedAtIsNull(LocalDate date);
+    /**
+     * Find sessions by date range
+     */
+    List<GymSession> findBySessionDateBetween(LocalDate startDate, LocalDate endDate);
     
-    List<GymSession> findBySessionDateAfterAndDeletedAtIsNull(LocalDate date);
+    /**
+     * Find a session that covers the specified time slot
+     */
+    Optional<GymSession> findBySessionDateAndStartTimeLessThanEqualAndEndTimeGreaterThanEqual(
+            LocalDate date, LocalTime startTime, LocalTime endTime);
+    
+    /**
+     * Find sessions with available capacity
+     */
+    List<GymSession> findBySessionDateAndReservedSpotsLessThan(LocalDate date, int capacity);
+
+    /**
+     * Find sessions by date
+     */
+    List<GymSession> findBySessionDate(LocalDate date);
+
+    /**
+     * Find sessions by trainer ID and date range
+     */
+    List<GymSession> findByTrainerIdAndSessionDateBetween(UUID trainerId, LocalDate startDate, LocalDate endDate);
 }

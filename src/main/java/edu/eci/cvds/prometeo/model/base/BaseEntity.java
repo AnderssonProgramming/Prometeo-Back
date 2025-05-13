@@ -39,4 +39,12 @@ public abstract class BaseEntity {
     public boolean isDeleted() {
         return deletedAt != null;
     }
+
+    public UUID getId() {
+        return id;
+    }
+
+    public void setDeletedAt(LocalDateTime deletedAt) {
+        this.deletedAt = deletedAt;
+    }
 }

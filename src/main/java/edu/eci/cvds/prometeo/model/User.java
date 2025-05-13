@@ -1,59 +1,85 @@
 package edu.eci.cvds.prometeo.model;
 
-import edu.eci.cvds.prometeo.model.base.AuditableEntity;
-import edu.eci.cvds.prometeo.model.enums.UserRole;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-
 import jakarta.persistence.*;
 import java.time.LocalDate;
+import java.util.UUID;
 
+import edu.eci.cvds.prometeo.model.base.BaseEntity;
+
+/**
+ * Entity representing a user in the system
+ */
 @Entity
 @Table(name = "users")
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-public class User extends AuditableEntity {
+public class User extends BaseEntity {
+    
+    @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    private UUID id;
+    
+    @Column(name = "instutional_id", unique = true, nullable = false)
+    private String institutionalId;
 
-    @Column(name = "username", unique = true, nullable = false)
-    private String username;
-    // TODO: Delete useless fields
-    @Column(name = "password", nullable = false)
-    private String password;
-
-    @Column(name = "full_name", nullable = false)
-    private String fullName;
-
-    @Column(name = "identification_number", unique = true)
-    private String identificationNumber;
-
-    @Column(name = "identification_type")
-    private String identificationType;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "role", nullable = false)
-    private UserRole role;
-
-    @Column(name = "email", unique = true, nullable = false)
-    private String email;
-
-    @Column(name = "phone_number")
-    private String phoneNumber;
-
-    @Column(name = "program_code")
-    private String programCode;
-
-    @Column(name = "birth_date")
-    private LocalDate birthDate;
-
-    @Column(name = "address")
-    private String address;
-
-    public boolean validatePassword(String password) {
-        // Implement password validation logic
-        return this.password.equals(password); // This is simplistic, should use a proper password encoder
+    @Column(name = "name", nullable = false)
+    private String name;
+    
+    @Column(name = "weight")
+    private Double weight;
+    
+    @Column(name = "height")
+    private Double height;
+    
+    @Column(name = "is_trainer")
+    private String role;
+    
+    
+    // Getters and setters
+    public UUID getId() {
+        return id;
     }
+
+    public void setId(UUID id) {
+        this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public Double getWeight() {
+        return weight;
+    }
+
+    public void setWeight(Double weight) {
+        this.weight = weight;
+    }
+
+    public Double getHeight() {
+        return height;
+    }
+
+    public void setHeight(Double height) {
+        this.height = height;
+    }
+
+    public String getRole() {
+        return role;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
+    }
+
+    public String getInstitutionalId() {
+        return institutionalId;
+    }
+
+    public void setInstitutionalId(String institutionalId) {
+        this.institutionalId = institutionalId;
+    }
+
 }
