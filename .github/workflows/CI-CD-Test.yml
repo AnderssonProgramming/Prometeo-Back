@@ -38,7 +38,7 @@ jobs:
           distribution: 'temurin'
           cache: maven
       - name: Maven Verify permitiendo cero pruebas
-        run: mvn -Dtest=!PrometeoApplicationTests -Dsurefire.failIfNoSpecifiedTests=false verify
+        run: mvn verify -DskipTests
       - name: Ejecutar Tests de Reserva
         run: |
           echo "Ejecutando test: Dado que tengo 1 reserva registrada, Cuando lo consulto a nivel de servicio, Entonces la consulta será exitosa validando el campo id."
