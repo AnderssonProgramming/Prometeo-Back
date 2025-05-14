@@ -182,4 +182,25 @@ public class EquipmentDTOTest {
         equipment2.setName("Different Equipment");
         assertNotEquals(equipment1, equipment2);
     }
+
+    @Test
+    void testToString() {
+        // Arrange
+        EquipmentDTO equipment = new EquipmentDTO();
+        UUID id = UUID.randomUUID();
+        String name = "Treadmill";
+        String brand = "FitPro";
+        
+        equipment.setId(id);
+        equipment.setName(name);
+        equipment.setBrand(brand);
+        
+        // Act
+        String toString = equipment.toString();
+        
+        // Assert
+        assertTrue(toString.contains(id.toString()));
+        assertTrue(toString.contains(name));
+        assertTrue(toString.contains(brand));
+    }
 }

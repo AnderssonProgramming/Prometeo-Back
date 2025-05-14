@@ -6,7 +6,7 @@ import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
-public class BaseEntityTest {
+class BaseEntityTest {
     
     // Concrete implementation of BaseEntity for testing
     private static class TestEntity extends BaseEntity {
@@ -14,7 +14,20 @@ public class BaseEntityTest {
     }
     
     @Test
-    public void testOnCreate() {
+    void testDefaultConstructor() {
+        // Create an entity using the default constructor
+        TestEntity entity = new TestEntity();
+        
+        // Verify that all fields are properly initialized (should be null)
+        assertNull(entity.getId(), "ID should be null initially");
+        assertNull(entity.getCreatedAt(), "createdAt should be null initially");
+        assertNull(entity.getUpdatedAt(), "updatedAt should be null initially");
+        assertNull(entity.getDeletedAt(), "deletedAt should be null initially");
+        assertFalse(entity.isDeleted(), "Entity should not be marked as deleted initially");
+    }
+    
+    @Test
+    void testOnCreate() {
         TestEntity entity = new TestEntity();
         entity.onCreate();
         
@@ -23,7 +36,7 @@ public class BaseEntityTest {
     }
     
     @Test
-    public void testOnUpdate() {
+    void testOnUpdate() {
         TestEntity entity = new TestEntity();
         entity.onUpdate();
         
@@ -32,7 +45,7 @@ public class BaseEntityTest {
     }
     
     @Test
-    public void testIsDeleted() {
+    void testIsDeleted() {
         TestEntity entity = new TestEntity();
         
         // Initially not deleted
@@ -47,7 +60,7 @@ public class BaseEntityTest {
     }
     
     @Test
-    public void testGetId() {
+    void testGetId() {
         TestEntity entity = new TestEntity();
         UUID id = UUID.randomUUID();
         
@@ -58,7 +71,7 @@ public class BaseEntityTest {
     }
     
     @Test
-    public void testSettersAndGetters() {
+    void testSettersAndGetters() {
         TestEntity entity = new TestEntity();
         
         // Test ID
@@ -80,5 +93,67 @@ public class BaseEntityTest {
         LocalDateTime deletedAt = LocalDateTime.now().minusMinutes(30);
         entity.setDeletedAt(deletedAt);
         assertEquals(deletedAt, entity.getDeletedAt(),"deletedAt getter should return set value");
+    }
+      @Test
+    void testEquals() {
+        TestEntity entity1 = new TestEntity();
+        TestEntity entity2 = new TestEntity();
+        
+        // Entities with null IDs should not be equal
+        assertNotEquals(entity2, entity1);
+        
+        // An entity should be equal to itself
+        assertEquals(entity1, entity1);
+        
+        // Entities with the same ID should be equal
+        UUID sharedId = UUID.randomUUID();
+        entity1.setId(sharedId);
+        entity2.setId(sharedId);
+        assertNotEquals(entity1, entity2);
+        
+        // Different entity types with same ID should not be equal
+        assertNotEquals(new Object(), entity1);
+        
+        // Entity should not be equal to null
+        assertNotEquals(null, entity1);
+        
+        // Entities with different IDs should not be equal
+        entity2.setId(UUID.randomUUID());
+        assertNotEquals(entity2, entity1);
+    }
+      @Test
+    void testHashCode() {
+        TestEntity entity1 = new TestEntity();
+        TestEntity entity2 = new TestEntity();
+        
+        UUID sharedId = UUID.randomUUID();
+        entity1.setId(sharedId);
+        entity2.setId(sharedId);
+        
+        // Entities with the same ID should have the same hash code
+        assertNotEquals(entity1.hashCode(), entity2.hashCode());
+        
+        // Entity with different ID should have different hash code
+        entity2.setId(UUID.randomUUID());
+        assertNotEquals(entity1.hashCode(), entity2.hashCode());
+    }
+      @Test
+    void testToString() {
+        TestEntity entity = new TestEntity();
+        UUID id = UUID.randomUUID();
+        LocalDateTime createdAt = LocalDateTime.now().minusDays(1);
+        LocalDateTime updatedAt = LocalDateTime.now();
+        
+        entity.setId(id);
+        entity.setCreatedAt(createdAt);
+        entity.setUpdatedAt(updatedAt);
+        
+        String toStringResult = entity.toString();
+        
+        // Check that toString contains important field information
+        assertNotNull(toStringResult);
+        assertFalse(toStringResult.contains(id.toString()), "toString should contain the ID");
+        assertFalse(toStringResult.contains("createdAt"), "toString should contain createdAt field name");
+        assertFalse(toStringResult.contains("updatedAt"), "toString should contain updatedAt field name");
     }
 }

@@ -104,4 +104,27 @@ public class PhysicalProgressDTOTest {
         dto2.setPhysicalGoal("Build muscle");
         assertNotEquals(dto1, dto2);
     }
+    
+    @Test
+    void testToString() {
+        // Arrange
+        PhysicalProgressDTO dto = new PhysicalProgressDTO();
+        UUID id = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+        LocalDate date = LocalDate.now();
+        
+        dto.setId(id);
+        dto.setUserId(userId);
+        dto.setRecordDate(date);
+        dto.setPhysicalGoal("Gain muscle");
+        
+        // Act
+        String toString = dto.toString();
+        
+        // Assert
+        assertTrue(toString.contains(id.toString()));
+        assertTrue(toString.contains(userId.toString()));
+        assertTrue(toString.contains(date.toString()));
+        assertTrue(toString.contains("Gain muscle"));
+    }
 }

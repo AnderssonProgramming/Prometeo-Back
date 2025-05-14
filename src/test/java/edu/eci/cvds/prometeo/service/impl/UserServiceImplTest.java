@@ -368,4 +368,289 @@ public class UserServiceImplTest {
         verify(gymSessionRepository).findById(testGymSession.getId());
         verify(reservationRepository).save(any(Reservation.class));
     }
+    
+    // --------- Additional Tests for Coverage ---------
+    
+    @Test
+    void getAvailableTimeSlots_ShouldReturnTimeSlots() {
+        // Arrange
+        LocalDate date = LocalDate.now();
+        LocalTime openingTime = LocalTime.of(6, 0);
+        LocalTime closingTime = LocalTime.of(22, 0);
+        
+        // Create some existing sessions that occupy time slots
+        GymSession morning = new GymSession();
+        morning.setSessionDate(date);
+        morning.setStartTime(LocalTime.of(8, 0));
+        morning.setEndTime(LocalTime.of(10, 0));
+        morning.setCapacity(20);
+        morning.setReservedSpots(10); // Half-full session
+        
+        GymSession afternoon = new GymSession();
+        afternoon.setSessionDate(date);
+        afternoon.setStartTime(LocalTime.of(14, 0));
+        afternoon.setEndTime(LocalTime.of(16, 0));
+        afternoon.setCapacity(20);
+        afternoon.setReservedSpots(10); // Half-full session
+        
+        List<GymSession> existingSessions = Arrays.asList(morning, afternoon);
+        
+        // Fix to match actual implementation in UserServiceImpl
+        when(gymSessionRepository.findBySessionDateOrderByStartTime(date)).thenReturn(existingSessions);
+        
+        // Act
+        List<Object> result = userService.getAvailableTimeSlots(date);
+        
+        // Assert
+        assertNotNull(result);
+        assertEquals(2, result.size()); // Both sessions have space available
+        verify(gymSessionRepository).findBySessionDateOrderByStartTime(date);
+    }
+    
+    @Test
+    void createCustomRoutine_ShouldCreateAndReturnRoutine() {
+        // Arrange
+        UUID userId = testUser.getId();
+        Routine customRoutine = new Routine();
+        customRoutine.setName("Custom Routine");
+        customRoutine.setDescription("Custom Description");
+        customRoutine.setDifficulty("Intermediate");
+        customRoutine.setGoal("Muscle Building");
+        
+        Routine createdRoutine = new Routine(); // Create a new instance to return
+        createdRoutine.setId(UUID.randomUUID());
+        createdRoutine.setName("Custom Routine");
+        createdRoutine.setDescription("Custom Description");
+        createdRoutine.setDifficulty("Intermediate");
+        createdRoutine.setGoal("Muscle Building");
+        createdRoutine.setTrainerId(userId); // This simulates what should happen
+        
+        // Allow multiple calls to findById since the implementation calls it directly 
+        // and again through assignRoutineToUser
+        when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
+        when(routineService.createRoutine(any(Routine.class), any())).thenReturn(createdRoutine);
+        
+        // We need to mock the assignRoutineToUser method since it's called within createCustomRoutine
+        UserRoutine mockUserRoutine = new UserRoutine();
+        when(routineService.assignRoutineToUser(any(UUID.class), eq(userId), isNull(), 
+                any(Optional.class), any(Optional.class))).thenReturn(mockUserRoutine);
+        
+        // Act
+        Routine result = userService.createCustomRoutine(userId, customRoutine);
+        
+        // Assert
+        assertNotNull(result);
+        assertEquals("Custom Routine", result.getName());
+        assertEquals(userId, result.getTrainerId());
+        
+        // Verify findById is called at least once (it's actually called twice)
+        verify(userRepository, atLeastOnce()).findById(userId);
+        verify(routineService).createRoutine(any(Routine.class), any());
+    }
+    
+    @Test
+    void getReservationHistory_ShouldReturnReservations() {
+        // Arrange
+        UUID userId = testUser.getId();
+        LocalDate startDate = LocalDate.now().minusDays(30);
+        LocalDate endDate = LocalDate.now();
+        List<Reservation> reservations = Arrays.asList(testReservation);
+        
+        when(reservationRepository.findByUserIdAndReservationDateBetweenOrderByReservationDateDesc(
+                any(UUID.class), any(LocalDateTime.class), any(LocalDateTime.class))).thenReturn(reservations);
+        when(gymSessionRepository.findById(testGymSession.getId())).thenReturn(Optional.of(testGymSession));
+        
+        // Act
+        List<Object> result = userService.getReservationHistory(userId, 
+                Optional.of(startDate), Optional.of(endDate));
+        
+        // Assert
+        assertNotNull(result);
+        assertFalse(result.isEmpty());
+        verify(reservationRepository).findByUserIdAndReservationDateBetweenOrderByReservationDateDesc(
+                any(UUID.class), any(LocalDateTime.class), any(LocalDateTime.class));
+        verify(gymSessionRepository).findById(testGymSession.getId());
+    }
+    
+    @Test
+    void getRecommendedRoutines_ShouldReturnRecommendedRoutines() {
+        // Arrange
+        UUID userId = testUser.getId();
+        
+        // Create a proper recommendation with direct user and routine references
+        Recommendation recommendation = new Recommendation();
+        recommendation.setId(UUID.randomUUID());
+        recommendation.setUser(testUser);
+        recommendation.setRoutine(testRoutine);
+        recommendation.setActive(true);
+        recommendation.setWeight(5);
+        
+        List<Recommendation> recommendations = Arrays.asList(recommendation);
+        
+        // Need to mock user repository first to avoid NPE
+        when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
+        when(recommendationRepository.findByUserIdAndActive(userId, true)).thenReturn(recommendations);
+        // The findById mock is not needed as the recommendation already has the routine attached
+        
+        // Act
+        List<Routine> result = userService.getRecommendedRoutines(userId);
+        
+        // Assert
+        assertNotNull(result);
+        assertFalse(result.isEmpty());
+        assertEquals(1, result.size());
+        verify(userRepository).findById(userId);
+        verify(recommendationRepository).findByUserIdAndActive(userId, true);
+    }
+    
+    @Test
+    void getUserByInstitutionalId_ShouldReturnUser() {
+        // Arrange
+        when(userRepository.findByInstitutionalId(institutionalId)).thenReturn(Optional.of(testUser));
+        
+        // Act
+        User result = userService.getUserByInstitutionalId(institutionalId);
+        
+        // Assert
+        assertNotNull(result);
+        assertEquals(institutionalId, result.getInstitutionalId());
+        verify(userRepository).findByInstitutionalId(institutionalId);
+    }
+    
+    @Test
+    void logRoutineProgress_ShouldLogProgress() {
+        // Arrange
+        UUID userId = testUser.getId();
+        UUID routineId = testRoutine.getId();
+        int completionPercentage = 75;
+        
+        when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
+        
+        // Act
+        boolean result = userService.logRoutineProgress(userId, routineId, completionPercentage);
+        
+        // Assert
+        assertTrue(result);
+        verify(userRepository).findById(userId);
+    }
+    
+    @Test
+    void updateRoutine_ShouldUpdateRoutine() {
+        // Arrange
+        UUID routineId = testRoutine.getId();
+        Routine updatedRoutine = new Routine();
+        updatedRoutine.setId(routineId);
+        updatedRoutine.setName("Updated Routine");
+        updatedRoutine.setDescription("Updated Description");
+        
+        when(routineService.updateRoutine(any(UUID.class), any(Routine.class), isNull())).thenReturn(updatedRoutine);
+        
+        // Act
+        Routine result = userService.updateRoutine(routineId, updatedRoutine);
+        
+        // Assert
+        assertNotNull(result);
+        assertEquals("Updated Routine", result.getName());
+        verify(routineService).updateRoutine(any(UUID.class), any(Routine.class), isNull());
+    }
+    
+    @Test
+    void setPhysicalGoal_ShouldSetGoalAndReturnProgress() {
+        // Arrange
+        UUID userId = testUser.getId();
+        String goal = "Lose weight";
+        PhysicalProgress updatedProgress = new PhysicalProgress();
+        updatedProgress.setId(UUID.randomUUID());
+        updatedProgress.setUserId(userId);
+        
+        when(physicalProgressService.setGoal(userId, goal)).thenReturn(updatedProgress);
+        
+        // Act
+        PhysicalProgress result = userService.setPhysicalGoal(userId, goal);
+        
+        // Assert
+        assertNotNull(result);
+        verify(physicalProgressService).setGoal(userId, goal);
+    }
+    
+    @Test
+    void updatePhysicalMeasurement_ShouldUpdateAndReturnProgress() {
+        // Arrange
+        UUID progressId = UUID.randomUUID();
+        BodyMeasurements measurements = new BodyMeasurements();
+        measurements.setHeight(180.0);
+        
+        PhysicalProgress updatedProgress = new PhysicalProgress();
+        updatedProgress.setId(progressId);
+        updatedProgress.setMeasurements(measurements);
+        
+        when(physicalProgressService.updateMeasurement(progressId, measurements)).thenReturn(updatedProgress);
+        
+        // Act
+        PhysicalProgress result = userService.updatePhysicalMeasurement(progressId, measurements);
+        
+        // Assert
+        assertNotNull(result);
+        assertEquals(measurements.getHeight(), result.getMeasurements().getHeight());
+        verify(physicalProgressService).updateMeasurement(progressId, measurements);
+    }
+    
+    @Test
+    void calculatePhysicalProgressMetrics_ShouldReturnMetrics() {
+        // Arrange
+        UUID userId = testUser.getId();
+        int months = 3;
+        Map<String, Double> expectedMetrics = new HashMap<>();
+        expectedMetrics.put("weightChange", -5.0);
+        expectedMetrics.put("bmiChange", -1.5);
+        
+        when(physicalProgressService.calculateProgressMetrics(userId, months)).thenReturn(expectedMetrics);
+        
+        // Act
+        Map<String, Double> result = userService.calculatePhysicalProgressMetrics(userId, months);
+        
+        // Assert
+        assertNotNull(result);
+        assertEquals(expectedMetrics.size(), result.size());
+        assertEquals(expectedMetrics.get("weightChange"), result.get("weightChange"));
+        assertEquals(expectedMetrics.get("bmiChange"), result.get("bmiChange"));
+        verify(physicalProgressService).calculateProgressMetrics(userId, months);
+    }
+    
+    @Test
+    void getLatestPhysicalMeasurement_ShouldReturnLatestMeasurement() {
+        // Arrange
+        UUID userId = testUser.getId();
+        PhysicalProgress latestProgress = new PhysicalProgress();
+        latestProgress.setId(UUID.randomUUID());
+        latestProgress.setUserId(userId);
+        
+        BodyMeasurements measurements = new BodyMeasurements();
+        measurements.setHeight(180.0);
+        latestProgress.setMeasurements(measurements);
+        
+        when(physicalProgressService.getLatestMeasurement(userId)).thenReturn(Optional.of(latestProgress));
+        
+        // Act
+        Optional<PhysicalProgress> result = userService.getLatestPhysicalMeasurement(userId);
+        
+        // Assert
+        assertTrue(result.isPresent());
+        assertEquals(latestProgress.getId(), result.get().getId());
+        verify(physicalProgressService).getLatestMeasurement(userId);
+    }
+    
+    @Test
+    void getLatestPhysicalMeasurement_ShouldReturnEmpty_WhenNoMeasurementExists() {
+        // Arrange
+        UUID userId = testUser.getId();
+        when(physicalProgressService.getLatestMeasurement(userId)).thenReturn(Optional.empty());
+        
+        // Act
+        Optional<PhysicalProgress> result = userService.getLatestPhysicalMeasurement(userId);
+        
+        // Assert
+        assertFalse(result.isPresent());
+        verify(physicalProgressService).getLatestMeasurement(userId);
+    }
 }
