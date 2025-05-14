@@ -33,3 +33,5 @@ build/
 .vscode/
 .env
 errorLog.txt
+requirements.pdf
+4_Maven Verify.txt
