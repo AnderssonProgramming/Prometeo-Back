@@ -12,9 +12,10 @@ import edu.eci.cvds.prometeo.service.RecommendationService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -24,6 +25,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 
+@ExtendWith(MockitoExtension.class)
 public class GoalServiceImplTest {
 
     @Mock
@@ -96,13 +98,17 @@ public class GoalServiceImplTest {
         verify(goalRepository, times(2)).save(any(Goal.class));
         verify(recommendationService, times(1)).recommendRoutines(userId);
     }
-    
-    @Test
+      @Test
     public void testAddUserGoalWithInvalidUser() {
         List<String> goals = Arrays.asList("Goal 1");
         when(userRepository.findById(userId)).thenReturn(Optional.empty());
         
-        goalService.addUserGoal(userId, goals);
+        // Verificar que se lanza la excepción esperada
+        PrometeoExceptions exception = org.junit.jupiter.api.Assertions.assertThrows(
+            PrometeoExceptions.class,
+            () -> goalService.addUserGoal(userId, goals)
+        );
+        assertEquals("El usuario no existe", exception.getMessage());
     }
 
     @Test
@@ -120,16 +126,19 @@ public class GoalServiceImplTest {
         verify(recommendationRepository, times(1)).findByUserIdAndActive(userId, true);
         verify(recommendationRepository, times(1)).saveAll(recommendationList);
         verify(recommendationService, times(1)).recommendRoutines(userId);
-    }
-
-    @Test
+    }    @Test
     public void testUpdateUserGoalWithInvalidGoalId() {
         Map<UUID, String> updatedGoals = new HashMap<>();
         updatedGoals.put(goalId, "Updated goal");
         
         when(goalRepository.findById(goalId)).thenReturn(Optional.empty());
         
-        goalService.updateUserGoal(updatedGoals);
+        // Verificar que se lanza la excepción esperada
+        PrometeoExceptions exception = org.junit.jupiter.api.Assertions.assertThrows(
+            PrometeoExceptions.class,
+            () -> goalService.updateUserGoal(updatedGoals)
+        );
+        assertEquals("Meta no encontrada.", exception.getMessage());
     }
 
     @Test
@@ -155,12 +164,15 @@ public class GoalServiceImplTest {
         verify(recommendationRepository, times(1)).findByUserIdAndActive(userId, true);
         verify(recommendationRepository, times(1)).saveAll(recommendationList);
         verify(recommendationService, times(1)).recommendRoutines(userId);
-    }
-
-    @Test
+    }    @Test
     public void testDeleteGoalWithInvalidGoalId() {
         when(goalRepository.findById(goalId)).thenReturn(Optional.empty());
         
-        goalService.deleteGoal(goalId);
+        // Verificar que se lanza la excepción esperada
+        PrometeoExceptions exception = org.junit.jupiter.api.Assertions.assertThrows(
+            PrometeoExceptions.class,
+            () -> goalService.deleteGoal(goalId)
+        );
+        assertEquals("Meta no encontrada.", exception.getMessage());
     }
 }

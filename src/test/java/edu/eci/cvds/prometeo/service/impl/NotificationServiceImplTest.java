@@ -8,9 +8,10 @@ import edu.eci.cvds.prometeo.repository.UserRepository;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.Optional;
@@ -20,9 +21,8 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 
-
-
-public class NotificationServiceImplTest {
+@ExtendWith(MockitoExtension.class)
+class NotificationServiceImplTest {
 
     @Mock
     private UserRepository userRepository;
@@ -40,10 +40,8 @@ public class NotificationServiceImplTest {
     private UUID sessionId;
     private UUID reservationId;
     private GymSession gymSession;
-    private Reservation reservation;
-
-    @BeforeEach
-    public void setup() {
+    private Reservation reservation;    @BeforeEach
+    void setup() {
         userId = UUID.randomUUID();
         sessionId = UUID.randomUUID();
         reservationId = UUID.randomUUID();
@@ -60,10 +58,8 @@ public class NotificationServiceImplTest {
         reservation.setId(reservationId);
         reservation.setSessionId(sessionId);
         reservation.setUserId(userId);
-    }
-
-    @Test
-    public void testSendNotification() {
+    }    @Test
+    void testSendNotification() {
         // Arrange
         String title = "Test Title";
         String message = "Test Message";
@@ -75,10 +71,8 @@ public class NotificationServiceImplTest {
 
         // Assert
         assertTrue(result);
-    }
-
-    @Test
-    public void testSendSpotAvailableNotification_Success() {
+    }    @Test
+    void testSendSpotAvailableNotification_Success() {
         // Arrange
         when(gymSessionRepository.findById(sessionId)).thenReturn(Optional.of(gymSession));
 
@@ -91,7 +85,7 @@ public class NotificationServiceImplTest {
     }
 
     @Test
-    public void testSendSpotAvailableNotification_SessionNotFound() {
+    void testSendSpotAvailableNotification_SessionNotFound() {
         // Arrange
         when(gymSessionRepository.findById(sessionId)).thenReturn(Optional.empty());
 
@@ -101,10 +95,8 @@ public class NotificationServiceImplTest {
         // Assert
         assertFalse(result);
         verify(gymSessionRepository).findById(sessionId);
-    }
-
-    @Test
-    public void testSendReservationConfirmation_Success() {
+    }    @Test
+    void testSendReservationConfirmation_Success() {
         // Arrange
         when(reservationRepository.findById(reservationId)).thenReturn(Optional.of(reservation));
         when(gymSessionRepository.findById(sessionId)).thenReturn(Optional.of(gymSession));
@@ -119,7 +111,7 @@ public class NotificationServiceImplTest {
     }
 
     @Test
-    public void testSendReservationConfirmation_ReservationNotFound() {
+    void testSendReservationConfirmation_ReservationNotFound() {
         // Arrange
         when(reservationRepository.findById(reservationId)).thenReturn(Optional.empty());
 
@@ -133,7 +125,7 @@ public class NotificationServiceImplTest {
     }
 
     @Test
-    public void testSendReservationConfirmation_SessionNotFound() {
+    void testSendReservationConfirmation_SessionNotFound() {
         // Arrange
         when(reservationRepository.findById(reservationId)).thenReturn(Optional.of(reservation));
         when(gymSessionRepository.findById(sessionId)).thenReturn(Optional.empty());
@@ -145,10 +137,8 @@ public class NotificationServiceImplTest {
         assertFalse(result);
         verify(reservationRepository).findById(reservationId);
         verify(gymSessionRepository).findById(sessionId);
-    }
-
-    @Test
-    public void testSendSessionReminder_Success() {
+    }    @Test
+    void testSendSessionReminder_Success() {
         // Arrange
         when(reservationRepository.findById(reservationId)).thenReturn(Optional.of(reservation));
         when(gymSessionRepository.findById(sessionId)).thenReturn(Optional.of(gymSession));
@@ -163,7 +153,7 @@ public class NotificationServiceImplTest {
     }
 
     @Test
-    public void testSendSessionReminder_ReservationNotFound() {
+    void testSendSessionReminder_ReservationNotFound() {
         // Arrange
         when(reservationRepository.findById(reservationId)).thenReturn(Optional.empty());
 
@@ -177,7 +167,7 @@ public class NotificationServiceImplTest {
     }
 
     @Test
-    public void testSendSessionReminder_SessionNotFound() {
+    void testSendSessionReminder_SessionNotFound() {
         // Arrange
         when(reservationRepository.findById(reservationId)).thenReturn(Optional.of(reservation));
         when(gymSessionRepository.findById(sessionId)).thenReturn(Optional.empty());

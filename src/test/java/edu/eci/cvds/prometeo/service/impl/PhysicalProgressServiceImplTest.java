@@ -6,21 +6,21 @@ import edu.eci.cvds.prometeo.repository.PhysicalProgressRepository;
 import org.mockito.Mock;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.quality.Strictness;
 import java.time.LocalDate;
 import java.util.*;
+import java.util.NoSuchElementException;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 
-
-
-
-
-public class PhysicalProgressServiceImplTest {
+@ExtendWith(MockitoExtension.class)
+class PhysicalProgressServiceImplTest {
 
     @Mock
     private PhysicalProgressRepository physicalProgressRepository;
@@ -33,31 +33,19 @@ public class PhysicalProgressServiceImplTest {
     private UUID trainerId;
     private PhysicalProgress testProgress;
     private PhysicalProgress olderProgress;
-    private BodyMeasurements testMeasurements;
-
-    @BeforeEach
-    public void setup() {
-        MockitoAnnotations.initMocks(this);
-        
+    private BodyMeasurements testMeasurements;    @BeforeEach
+    void setup() {
         userId = UUID.randomUUID();
         progressId = UUID.randomUUID();
         trainerId = UUID.randomUUID();
         
+        // Initialize basic mocks without any stubbing
         testProgress = mock(PhysicalProgress.class);
-        when(testProgress.getId()).thenReturn(progressId);
-        when(testProgress.getUserId()).thenReturn(userId);
-        when(testProgress.getRecordDate()).thenReturn(LocalDate.now());
-        
         olderProgress = mock(PhysicalProgress.class);
-        when(olderProgress.getId()).thenReturn(UUID.randomUUID());
-        when(olderProgress.getUserId()).thenReturn(userId);
-        when(olderProgress.getRecordDate()).thenReturn(LocalDate.now().minusDays(10));
-        
         testMeasurements = mock(BodyMeasurements.class);
     }
-    
-    @Test
-    public void testRecordMeasurement() {
+      @Test
+    void testRecordMeasurement() {
         PhysicalProgress inputProgress = mock(PhysicalProgress.class);
         when(physicalProgressRepository.save(any(PhysicalProgress.class))).thenReturn(testProgress);
         
@@ -67,10 +55,9 @@ public class PhysicalProgressServiceImplTest {
         verify(inputProgress).setRecordDate(any(LocalDate.class));
         verify(physicalProgressRepository).save(inputProgress);
         assertEquals(testProgress, result);
-    }
-    
-    @Test
-    public void testGetMeasurementHistoryNoDateFilters() {
+    }    @Test
+    void testGetMeasurementHistoryNoDateFilters() {
+        // Just setup the repository mock without record date configs
         List<PhysicalProgress> progressList = Arrays.asList(testProgress, olderProgress);
         when(physicalProgressRepository.findByUserId(userId)).thenReturn(progressList);
         
@@ -79,10 +66,12 @@ public class PhysicalProgressServiceImplTest {
         
         assertEquals(2, result.size());
         verify(physicalProgressRepository).findByUserId(userId);
-    }
-    
-    @Test
-    public void testGetMeasurementHistoryWithStartDate() {
+    }    @Test
+    void testGetMeasurementHistoryWithStartDate() {
+        // We need to set the record dates here since they're actually used in the filter
+        when(testProgress.getRecordDate()).thenReturn(LocalDate.now());
+        when(olderProgress.getRecordDate()).thenReturn(LocalDate.now().minusDays(10));
+        
         List<PhysicalProgress> progressList = Arrays.asList(testProgress, olderProgress);
         when(physicalProgressRepository.findByUserId(userId)).thenReturn(progressList);
         
@@ -93,9 +82,8 @@ public class PhysicalProgressServiceImplTest {
         verify(physicalProgressRepository).findByUserId(userId);
         assertEquals(1, result.size());
     }
-    
-    @Test
-    public void testGetLatestMeasurement() {
+      @Test
+    void testGetLatestMeasurement() {
         List<PhysicalProgress> progressList = Arrays.asList(testProgress, olderProgress);
         when(physicalProgressRepository.findByUserIdOrderByRecordDateDesc(userId)).thenReturn(progressList);
         
@@ -104,18 +92,16 @@ public class PhysicalProgressServiceImplTest {
         assertTrue(result.isPresent());
         assertEquals(testProgress, result.get());
     }
-    
-    @Test
-    public void testGetLatestMeasurementEmpty() {
+      @Test
+    void testGetLatestMeasurementEmpty() {
         when(physicalProgressRepository.findByUserIdOrderByRecordDateDesc(userId)).thenReturn(Collections.emptyList());
         
         Optional<PhysicalProgress> result = physicalProgressService.getLatestMeasurement(userId);
         
         assertFalse(result.isPresent());
     }
-    
-    @Test
-    public void testUpdateMeasurement() {
+      @Test
+    void testUpdateMeasurement() {
         when(physicalProgressRepository.findById(progressId)).thenReturn(Optional.of(testProgress));
         when(physicalProgressRepository.save(testProgress)).thenReturn(testProgress);
         
@@ -124,17 +110,16 @@ public class PhysicalProgressServiceImplTest {
         verify(testProgress).updateMeasurements(testMeasurements);
         verify(physicalProgressRepository).save(testProgress);
         assertEquals(testProgress, result);
-    }
-    
-    @Test
-    public void testUpdateMeasurementNotFound() {
+    }    @Test
+    void testUpdateMeasurementNotFound() {
         when(physicalProgressRepository.findById(progressId)).thenReturn(Optional.empty());
         
-        physicalProgressService.updateMeasurement(progressId, testMeasurements);
+        assertThrows(NoSuchElementException.class, () -> {
+            physicalProgressService.updateMeasurement(progressId, testMeasurements);
+        });
     }
-    
-    @Test
-    public void testSetGoal() {
+      @Test
+    void testSetGoal() {
         when(physicalProgressRepository.findByUserIdOrderByRecordDateDesc(userId)).thenReturn(
                 Arrays.asList(testProgress));
         when(physicalProgressRepository.save(testProgress)).thenReturn(testProgress);
@@ -145,17 +130,16 @@ public class PhysicalProgressServiceImplTest {
         verify(testProgress).updateGoal(goal);
         verify(physicalProgressRepository).save(testProgress);
         assertEquals(testProgress, result);
-    }
-    
-    @Test
-    public void testSetGoalNoProgressFound() {
+    }    @Test
+    void testSetGoalNoProgressFound() {
         when(physicalProgressRepository.findByUserIdOrderByRecordDateDesc(userId)).thenReturn(Collections.emptyList());
         
-        physicalProgressService.setGoal(userId, "New Goal");
+        assertThrows(NoSuchElementException.class, () -> {
+            physicalProgressService.setGoal(userId, "New Goal");
+        });
     }
-    
-    @Test
-    public void testRecordObservation() {
+      @Test
+    void testRecordObservation() {
         when(physicalProgressRepository.findByUserIdOrderByRecordDateDesc(userId)).thenReturn(
                 Arrays.asList(testProgress));
         when(physicalProgressRepository.save(testProgress)).thenReturn(testProgress);
@@ -166,61 +150,47 @@ public class PhysicalProgressServiceImplTest {
         verify(testProgress).addObservation(observation);
         verify(physicalProgressRepository).save(testProgress);
         assertEquals(testProgress, result);
-    }
-    
-    @Test
-    public void testRecordObservationNoProgressFound() {
+    }    @Test
+    void testRecordObservationNoProgressFound() {
         when(physicalProgressRepository.findByUserIdOrderByRecordDateDesc(userId)).thenReturn(Collections.emptyList());
         
-        physicalProgressService.recordObservation(userId, "Observation", trainerId);
+        assertThrows(NoSuchElementException.class, () -> {
+            physicalProgressService.recordObservation(userId, "Observation", trainerId);
+        });
     }
-    
-    @Test
-    public void testGetProgressById() {
+      @Test
+    void testGetProgressById() {
         when(physicalProgressRepository.findById(progressId)).thenReturn(Optional.of(testProgress));
         
         Optional<PhysicalProgress> result = physicalProgressService.getProgressById(progressId);
         
         assertTrue(result.isPresent());
         assertEquals(testProgress, result.get());
-    }
-    
-    @Test
-    public void testCalculateProgressMetrics() {
+    }    @Test
+    void testCalculateProgressMetrics() {
         // Create test progress entries with weight
         PhysicalProgress latest = mock(PhysicalProgress.class);
-        when(latest.getRecordDate()).thenReturn(LocalDate.now());
-        
         PhysicalProgress oldest = mock(PhysicalProgress.class);
+        
+        // Configure the record dates for proper time range calculation
+        when(latest.getRecordDate()).thenReturn(LocalDate.now());
         when(oldest.getRecordDate()).thenReturn(LocalDate.now().minusMonths(3));
         
-        // Mock the weight measurements
-        Object latestWeight = mock(Object.class);
-        when(latestWeight.toString()).thenReturn("80.0");
-        
-        Object oldestWeight = mock(Object.class);
-        when(oldestWeight.toString()).thenReturn("85.0");
-        
-        // Mock getValue method if your Measurement class has it
-        try {
-            when(latestWeight.getClass().getMethod("getValue").invoke(latestWeight)).thenReturn(80.0);
-            when(oldestWeight.getClass().getMethod("getValue").invoke(oldestWeight)).thenReturn(85.0);
-        } catch (Exception e) {
-            // This is just to handle reflection errors in test setup
-        }
+        // We'll simplify the test to avoid unnecessary stubbing
+        // Instead of trying to mock the complex measurement objects, we're just
+        // testing that the service attempts to retrieve the history
         
         List<PhysicalProgress> history = Arrays.asList(latest, oldest);
         when(physicalProgressRepository.findByUserIdOrderByRecordDateDesc(userId)).thenReturn(history);
         
-        Map<String, Double> metrics = physicalProgressService.calculateProgressMetrics(userId, 6);
+        // Execute the method
+        physicalProgressService.calculateProgressMetrics(userId, 6);
         
-        // This test might need adjustments based on your actual Measurement implementation
-        // The verification should check that the repository was called correctly
+        // Just verify the repository call
         verify(physicalProgressRepository).findByUserIdOrderByRecordDateDesc(userId);
     }
-    
-    @Test
-    public void testCalculateProgressMetricsInsufficientData() {
+      @Test
+    void testCalculateProgressMetricsInsufficientData() {
         List<PhysicalProgress> history = Collections.singletonList(testProgress);
         when(physicalProgressRepository.findByUserIdOrderByRecordDateDesc(userId)).thenReturn(history);
         

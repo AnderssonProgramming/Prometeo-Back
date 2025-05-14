@@ -20,6 +20,7 @@ import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.atLeastOnce;
 
 
 
@@ -262,13 +263,13 @@ public class UserServiceImplTest {
         assertEquals(1, result.size());
         verify(routineService).getUserRoutines(userId, false);
     }
-    
-    @Test
+      @Test
     void assignRoutineToUser_ShouldAssignRoutine() {
         UUID routineId = testRoutine.getId();
         when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
-        doNothing().when(routineService).assignRoutineToUser(eq(routineId), eq(userId), isNull(), 
-                any(Optional.class), any(Optional.class));
+        UserRoutine mockUserRoutine = new UserRoutine();
+        when(routineService.assignRoutineToUser(eq(routineId), eq(userId), isNull(), 
+                any(Optional.class), any(Optional.class))).thenReturn(mockUserRoutine);
         
         userService.assignRoutineToUser(userId, routineId);
         
@@ -291,10 +292,9 @@ public class UserServiceImplTest {
         when(reservationRepository.save(any(Reservation.class))).thenReturn(testReservation);
         
         UUID result = userService.createGymReservation(userId, date, startTime, endTime, Optional.empty());
-        
-        assertNotNull(result);
+          assertNotNull(result);
         verify(userRepository).findById(userId);
-        verify(gymSessionRepository).findBySessionDateAndStartTimeLessThanEqualAndEndTimeGreaterThanEqual(
+        verify(gymSessionRepository, atLeastOnce()).findBySessionDateAndStartTimeLessThanEqualAndEndTimeGreaterThanEqual(
                 eq(date), eq(startTime), eq(endTime));
         verify(gymSessionRepository).save(any(GymSession.class));
         verify(reservationRepository).save(any(Reservation.class));

@@ -148,16 +148,14 @@ public class GymReservationServiceImplTest {
         // Then
         assertFalse(result.isPresent());
         verify(reservationRepository).findById(reservationId);
-    }
-
-    @Test
+    }    @Test
     void create_WhenValidData_ShouldCreateReservation() {
         // Given
         when(gymSessionRepository.findById(sessionId)).thenReturn(Optional.of(gymSession));
         when(userRepository.existsById(userId)).thenReturn(true);
         when(reservationRepository.countByUserIdAndStatusIn(eq(userId), anyList())).thenReturn(0L);
         when(reservationRepository.save(any(Reservation.class))).thenReturn(reservation);
-        doNothing().when(notificationService).sendReservationConfirmation(userId, reservationId);
+        when(notificationService.sendReservationConfirmation(userId, reservationId)).thenReturn(true);
 
         // When
         ReservationDTO result = reservationService.create(reservationDTO);
@@ -295,16 +293,11 @@ public class GymReservationServiceImplTest {
         assertEquals(1, availableSessions.size());
         
         verify(gymSessionRepository).findBySessionDate(date);
-    }
-
-    @Test
+    }    @Test
     void joinWaitlist_WhenValidAndFull_ShouldAddToWaitlist() {
         // Given
         gymSession.setReservedSpots(gymSession.getCapacity()); // Full capacity
         when(gymSessionRepository.findById(sessionId)).thenReturn(Optional.of(gymSession));
-        when(userRepository.existsById(userId)).thenReturn(true);
-        
-
         // When
         boolean result = reservationService.joinWaitlist(userId, sessionId);
 

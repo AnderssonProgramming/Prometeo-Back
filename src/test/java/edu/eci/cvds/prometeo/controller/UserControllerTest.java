@@ -8,10 +8,10 @@ import edu.eci.cvds.prometeo.service.*;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import java.time.LocalDate;
@@ -23,8 +23,8 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
-
-public class UserControllerTest {
+@ExtendWith(MockitoExtension.class)
+class UserControllerTest {
 
     @Mock
     private UserService userService;
@@ -53,9 +53,8 @@ public class UserControllerTest {
     private User testUser;
     private UUID userId;
     private UserDTO userDTO;
-    
-    @BeforeEach
-    public void setup() {
+      @BeforeEach
+    void setup() {
         userId = UUID.randomUUID();
         testUser = new User();
         testUser.setId(userId);
@@ -66,10 +65,10 @@ public class UserControllerTest {
     }
     
     // User profile endpoint tests
-    
-    @Test
-    public void testGetUserById() {
-        when(userService.getUserById(anyString())).thenReturn(testUser);
+      @Test
+    void testGetUserById() {
+        // Use exact match instead of anyString()
+        when(userService.getUserById("1")).thenReturn(testUser);
         
         ResponseEntity<User> response = userController.getUserById("1");
         
@@ -112,10 +111,10 @@ public class UserControllerTest {
         assertEquals(users, response.getBody());
         verify(userService).getUsersByRole("STUDENT");
     }
-    
-    @Test
-    public void testCreateUser() {
-        when(userService.createUser(any(UserDTO.class))).thenReturn(testUser);
+      @Test
+    void testCreateUser() {
+        // Use the exact object instead of any()
+        when(userService.createUser(userDTO)).thenReturn(testUser);
         
         ResponseEntity<User> response = userController.createUser(userDTO);
         
@@ -123,10 +122,10 @@ public class UserControllerTest {
         assertEquals(testUser, response.getBody());
         verify(userService).createUser(userDTO);
     }
-    
-    @Test
-    public void testUpdateUser() {
-        when(userService.updateUser(anyString(), any(UserDTO.class))).thenReturn(testUser);
+      @Test
+    void testUpdateUser() {
+        // Use exact matches instead of any()
+        when(userService.updateUser("1", userDTO)).thenReturn(testUser);
         
         ResponseEntity<User> response = userController.updateUser("1", userDTO);
         
@@ -147,9 +146,8 @@ public class UserControllerTest {
     }
     
     // Physical tracking endpoint tests
-    
-    @Test
-    public void testRecordPhysicalMeasurement() {
+      @Test
+    void testRecordPhysicalMeasurement() {
         PhysicalProgress progress = new PhysicalProgress();
         PhysicalProgressDTO progressDTO = new PhysicalProgressDTO();
         
@@ -162,7 +160,9 @@ public class UserControllerTest {
         measurementsDTO.setChestCircumference(90.0);
         progressDTO.setMeasurements(measurementsDTO);
         
-        when(userService.recordPhysicalMeasurement(any(UUID.class), any(PhysicalProgress.class))).thenReturn(progress);
+        // For this kind of case where we can't easily predict the exact object,
+        // we need to use the Mockito.argThat matcher
+        when(userService.recordPhysicalMeasurement(eq(userId), any(PhysicalProgress.class))).thenReturn(progress);
         
         ResponseEntity<PhysicalProgress> response = userController.recordPhysicalMeasurement(userId, progressDTO);
         
@@ -170,24 +170,35 @@ public class UserControllerTest {
         assertEquals(progress, response.getBody());
         verify(userService).recordPhysicalMeasurement(eq(userId), any(PhysicalProgress.class));
     }
-    
-    @Test
-    public void testGetPhysicalMeasurementHistory() {
+      @Test
+    void testGetPhysicalMeasurementHistory() {
         List<PhysicalProgress> history = new ArrayList<>();
-        when(userService.getPhysicalMeasurementHistory(any(UUID.class), any(), any())).thenReturn(history);
+        
+        // Pre-define the dates to use exact values in our stubbing
+        LocalDate startDate = LocalDate.now().minusDays(30);
+        LocalDate endDate = LocalDate.now();
+        
+        when(userService.getPhysicalMeasurementHistory(
+                eq(userId), 
+                eq(Optional.of(startDate)), 
+                eq(Optional.of(endDate))
+        )).thenReturn(history);
         
         ResponseEntity<List<PhysicalProgress>> response = userController.getPhysicalMeasurementHistory(
-                userId, LocalDate.now().minusDays(30), LocalDate.now());
+                userId, startDate, endDate);
         
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(history, response.getBody());
-        verify(userService).getPhysicalMeasurementHistory(eq(userId), any(), any());
+        verify(userService).getPhysicalMeasurementHistory(
+                eq(userId), 
+                eq(Optional.of(startDate)), 
+                eq(Optional.of(endDate))
+        );
     }
-    
-    @Test
-    public void testGetLatestPhysicalMeasurement() {
+      @Test
+    void testGetLatestPhysicalMeasurement() {
         PhysicalProgress progress = new PhysicalProgress();
-        when(userService.getLatestPhysicalMeasurement(any(UUID.class))).thenReturn(Optional.of(progress));
+        when(userService.getLatestPhysicalMeasurement(userId)).thenReturn(Optional.of(progress));
         
         ResponseEntity<PhysicalProgress> response = userController.getLatestPhysicalMeasurement(userId);
         
@@ -197,8 +208,8 @@ public class UserControllerTest {
     }
     
     @Test
-    public void testGetLatestPhysicalMeasurement_NotFound() {
-        when(userService.getLatestPhysicalMeasurement(any(UUID.class))).thenReturn(Optional.empty());
+    void testGetLatestPhysicalMeasurement_NotFound() {
+        when(userService.getLatestPhysicalMeasurement(userId)).thenReturn(Optional.empty());
         
         ResponseEntity<PhysicalProgress> response = userController.getLatestPhysicalMeasurement(userId);
         
@@ -406,36 +417,44 @@ public class UserControllerTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(updatedProgress, response.getBody());
         verify(userService).setPhysicalGoal(userId, "Gain muscle");
-    }
-
-    @Test
-    public void testGetPhysicalProgressMetrics() {
+    }    @Test
+    void testGetPhysicalProgressMetrics() {
         Map<String, Double> metrics = new HashMap<>();
         metrics.put("weightChange", -2.5);
         metrics.put("waistReduction", 3.0);
         
-        when(userService.calculatePhysicalProgressMetrics(any(UUID.class), anyInt())).thenReturn(metrics);
+        when(userService.calculatePhysicalProgressMetrics(userId, 3)).thenReturn(metrics);
         
         ResponseEntity<Map<String, Double>> response = userController.getPhysicalProgressMetrics(userId, 3);
         
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(metrics, response.getBody());
         verify(userService).calculatePhysicalProgressMetrics(userId, 3);
-    }
-
-    @Test
-    public void testGetTraineePhysicalProgress() {
+    }@Test
+    void testGetTraineePhysicalProgress() {
         UUID trainerId = UUID.randomUUID();
         List<PhysicalProgress> history = new ArrayList<>();
         
-        when(userService.getPhysicalMeasurementHistory(any(UUID.class), any(), any())).thenReturn(history);
+        // Pre-define the dates to use exact values
+        LocalDate startDate = LocalDate.now().minusMonths(1);
+        LocalDate endDate = LocalDate.now();
+        
+        when(userService.getPhysicalMeasurementHistory(
+                eq(userId), 
+                eq(Optional.of(startDate)), 
+                eq(Optional.of(endDate))
+        )).thenReturn(history);
         
         ResponseEntity<List<PhysicalProgress>> response = userController.getTraineePhysicalProgress(
-                trainerId, userId, LocalDate.now().minusMonths(1), LocalDate.now());
+                trainerId, userId, startDate, endDate);
         
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(history, response.getBody());
-        verify(userService).getPhysicalMeasurementHistory(eq(userId), any(), any());
+        verify(userService).getPhysicalMeasurementHistory(
+                eq(userId), 
+                eq(Optional.of(startDate)), 
+                eq(Optional.of(endDate))
+        );
     }
 
     @Test
@@ -484,55 +503,48 @@ public class UserControllerTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(updatedRoutine, response.getBody());
         verify(userService).updateRoutine(eq(routineId), any(Routine.class));
-    }
-
-    @Test
-    public void testLogRoutineProgress() {
+    }    @Test
+    void testLogRoutineProgress() {
         UUID routineId = UUID.randomUUID();
         Map<String, Integer> progressData = new HashMap<>();
         progressData.put("completed", 75);
         
-        doNothing().when(userService).logRoutineProgress(any(UUID.class), any(UUID.class), anyInt());
+        // Fix: Don't use doNothing for methods that aren't void - just don't mock the return value
+        // The method call will do nothing by default if it's not explicitly mocked
         
         ResponseEntity<Void> response = userController.logRoutineProgress(userId, routineId, progressData);
         
         assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
         verify(userService).logRoutineProgress(userId, routineId, 75);
-    }
-
-    @Test
-    public void testGetRecommendedRoutines() {
+    }@Test
+    void testGetRecommendedRoutines() {
         List<Routine> recommendations = new ArrayList<>();
-        when(userService.getRecommendedRoutines(any(UUID.class))).thenReturn(recommendations);
+        when(userService.getRecommendedRoutines(userId)).thenReturn(recommendations);
         
         ResponseEntity<List<Routine>> response = userController.getRecommendedRoutines(userId);
         
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(recommendations, response.getBody());
         verify(userService).getRecommendedRoutines(userId);
-    }
-
-    @Test
-    public void testCheckAvailabilityForTime() {
+    }@Test
+    void testCheckAvailabilityForTime() {
         LocalDate date = LocalDate.now();
         LocalTime time = LocalTime.of(14, 0);
         Map<String, Object> availability = new HashMap<>();
         availability.put("available", true);
         availability.put("capacity", 20);
         
-        when(gymReservationService.getAvailability(any(LocalDate.class), any(LocalTime.class))).thenReturn(availability);
+        when(gymReservationService.getAvailability(date, time)).thenReturn(availability);
         
         ResponseEntity<Map<String, Object>> response = userController.checkAvailabilityForTime(date, time);
         
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(availability, response.getBody());
         verify(gymReservationService).getAvailability(date, time);
-    }
-
-    @Test
-    public void testGetUserReservations() {
+    }@Test
+    void testGetUserReservations() {
         List<ReservationDTO> reservations = new ArrayList<>();
-        when(gymReservationService.getByUserId(any(UUID.class))).thenReturn(reservations);
+        when(gymReservationService.getByUserId(userId)).thenReturn(reservations);
         
         ResponseEntity<List<ReservationDTO>> response = userController.getUserReservations(userId);
         

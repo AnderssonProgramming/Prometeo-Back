@@ -10,9 +10,10 @@ import edu.eci.cvds.prometeo.service.NotificationService;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 import java.time.LocalDate;
 import java.util.*;
 
@@ -21,10 +22,7 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 
-
-
-
-
+@ExtendWith(MockitoExtension.class)
 public class RoutineServiceImplTest {
 
     @Mock
@@ -47,12 +45,8 @@ public class RoutineServiceImplTest {
     private UUID trainerId;
     private Routine routine;
     private RoutineExercise routineExercise;
-    private UserRoutine userRoutine;
-
-    @BeforeEach
+    private UserRoutine userRoutine;    @BeforeEach
     public void setUp() {
-        MockitoAnnotations.initMocks(this);
-        
         routineId = UUID.randomUUID();
         userId = UUID.randomUUID();
         trainerId = UUID.randomUUID();
@@ -172,14 +166,14 @@ public class RoutineServiceImplTest {
         verify(userRoutineRepository, times(2)).save(any(UserRoutine.class));
         verify(notificationService).sendNotification(
             eq(userId), anyString(), anyString(), anyString(), any(Optional.class));
-    }
-
-    @Test
+    }    @Test
     public void testAssignRoutineToUser_RoutineNotFound() {
         when(routineRepository.existsById(routineId)).thenReturn(false);
         
-        routineService.assignRoutineToUser(
-            routineId, userId, trainerId, Optional.empty(), Optional.empty());
+        assertThrows(RuntimeException.class, () -> {
+            routineService.assignRoutineToUser(
+                routineId, userId, trainerId, Optional.empty(), Optional.empty());
+        });
     }
 
     @Test
@@ -232,13 +226,13 @@ public class RoutineServiceImplTest {
         assertEquals(updatedRoutine.getDifficulty(), result.getDifficulty());
         assertEquals(updatedRoutine.getGoal(), result.getGoal());
         verify(routineRepository).save(routine);
-    }
-
-    @Test
+    }    @Test
     public void testUpdateRoutine_RoutineNotFound() {
         when(routineRepository.findById(routineId)).thenReturn(Optional.empty());
         
-        routineService.updateRoutine(routineId, routine, trainerId);
+        assertThrows(RuntimeException.class, () -> {
+            routineService.updateRoutine(routineId, routine, trainerId);
+        });
     }
 
     @Test
@@ -250,13 +244,13 @@ public class RoutineServiceImplTest {
         
         assertEquals(routineId, result.getRoutineId());
         verify(routineExerciseRepository).save(routineExercise);
-    }
-
-    @Test
+    }    @Test
     public void testAddExerciseToRoutine_RoutineNotFound() {
         when(routineRepository.existsById(routineId)).thenReturn(false);
         
-        routineService.addExerciseToRoutine(routineId, routineExercise);
+        assertThrows(RuntimeException.class, () -> {
+            routineService.addExerciseToRoutine(routineId, routineExercise);
+        });
     }
 
     @Test
@@ -269,13 +263,13 @@ public class RoutineServiceImplTest {
         
         assertTrue(result);
         verify(routineExerciseRepository).deleteById(routineExercise.getId());
-    }
-
-    @Test
+    }    @Test
     public void testRemoveExerciseFromRoutine_RoutineNotFound() {
         when(routineRepository.existsById(routineId)).thenReturn(false);
         
-        routineService.removeExerciseFromRoutine(routineId, routineExercise.getId());
+        assertThrows(RuntimeException.class, () -> {
+            routineService.removeExerciseFromRoutine(routineId, routineExercise.getId());
+        });
     }
 
     @Test
