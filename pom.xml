@@ -170,15 +170,10 @@
             <artifactId>dotenv-java</artifactId>
             <version>2.3.1</version>
         </dependency>
-<<<<<<< HEAD
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
-=======
-
-        
->>>>>>> c263229dfe416198e43710259282abb7e91f462f
     </dependencies>
     
     <dependencyManagement>

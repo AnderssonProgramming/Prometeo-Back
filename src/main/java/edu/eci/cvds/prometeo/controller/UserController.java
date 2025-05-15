@@ -115,7 +115,7 @@ public class UserController {
         return ResponseEntity.ok(userService.getUsersByRole(role));
     }
     
-    @PostMapping("/")
+    @PostMapping("/create")
     @Operation(summary = "Create user from JWT", description = "Creates a new user using data from the JWT token")
     @ApiResponse(responseCode = "201", description = "User created successfully",
             content = @Content(schema = @Schema(implementation = User.class)))
@@ -871,6 +871,8 @@ public class UserController {
             @Parameter(description = "Trainer ID") @PathVariable UUID trainerId) {
 
         List<Object> sessions = gymSessionService.getSessionsByTrainer(trainerId);
+        System.out.println("🔍 Accessing /trainer/{trainerId}/sessions endpoint");
+        System.out.println("🔍 Trainer ID: " + trainerId);
         return ResponseEntity.ok(sessions);
     }
 

@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class JwtUtil {
 
-    private final String SECRET_KEY = "MySuperSecretKeyThatIs256BitsLong!!"; // Debe ser la misma que usa el microservicio de usuarios
+    private final String SECRET_KEY = "supersecretpassword1234567891011121314"; // Debe ser la misma que usa el microservicio de usuarios
 
     public Claims extractClaims(String token) {
         return Jwts.parser()

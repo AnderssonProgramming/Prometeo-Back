@@ -5,10 +5,14 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.web.filter.OncePerRequestFilter;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
+import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.List;
 
 @Component
 public class JwtRequestFilter extends OncePerRequestFilter {
@@ -33,10 +37,10 @@ public class JwtRequestFilter extends OncePerRequestFilter {
             try {
                 var claims = jwtUtil.extractClaims(authHeader);
 
-                String username = claims.get("username", String.class);
-                String role = claims.get("role", String.class);
+                String username = claims.get("userName", String.class);
+                String role = claims.get("role", String.class).toUpperCase();
                 String name = claims.get("name", String.class);
-                String idCard = claims.get("idCard", String.class);
+                String idCard = claims.get("id", String.class);
 
                 // Log extracted claims
                 System.out.println("✅ JWT Claims extracted:");
@@ -51,6 +55,11 @@ public class JwtRequestFilter extends OncePerRequestFilter {
                 request.setAttribute("name", name);
                 request.setAttribute("institutionalId", idCard);
 
+                // Set authentication in SecurityContext
+                var authorities = List.of(new SimpleGrantedAuthority("ROLE_" + role));
+                var auth = new UsernamePasswordAuthenticationToken(username, null, authorities);
+                SecurityContextHolder.getContext().setAuthentication(auth);
+
             } catch (Exception e) {
                 System.out.println("❌ Error extracting JWT claims: " + e.getMessage());
                 response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid token");
@@ -61,5 +70,6 @@ public class JwtRequestFilter extends OncePerRequestFilter {
         }
 
         chain.doFilter(request, response);
+        System.out.println("🔍 Post-filter role: " + request.getAttribute("role"));
     }
 }
