@@ -14,7 +14,6 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.function.Function;
-import java.util.UUID;
 
 /**
  * Implementation of the ReportService interface.
@@ -150,15 +149,16 @@ public class ReportServiceImpl implements ReportService {
      * @param session The gym session to map.
      * @return A string representing the session data for the report.
      */
-    private String mapLine(GymSession session) {
-        return String.format(
-                "Fecha: %s | Capacidad Total: %d | Reservas Totales: %d | Tasa de Utilización: %.2f%% | Utilización Promedio: %.2f%% | Duración Promedio: %.2f minutos",
-                session.getSessionDate(), session.getCapacity(), session.getReservedSpots(),
-                session.getReservedSpots() * 100.0 / session.getCapacity(),
-                session.getReservedSpots() * 100.0 / session.getCapacity(),
-                session.getDuration().toMinutes()
-        );
-    }
+private String mapLine(GymSession session) {
+    return String.format(
+            "Fecha: %s | Capacidad Total: %d | Reservas Totales: %d | Tasa de Utilización: %.2f%% | Utilización Promedio: %.2f%% | Duración Promedio: %d minutos",
+            session.getSessionDate(), session.getCapacity(), session.getReservedSpots(),
+            session.getReservedSpots() * 100.0 / session.getCapacity(),
+            session.getReservedSpots() * 100.0 / session.getCapacity(),
+            session.getDuration().toMinutes()
+    );
+}
+    
 
     /**
      * Generates attendance statistics for the gym sessions within a given date range.
