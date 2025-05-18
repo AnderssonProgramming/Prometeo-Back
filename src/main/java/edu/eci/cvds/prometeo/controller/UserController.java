@@ -1,17 +1,17 @@
 package edu.eci.cvds.prometeo.controller;
 
 import edu.eci.cvds.prometeo.model.*;
+import edu.eci.cvds.prometeo.model.enums.ReportFormat;
 import edu.eci.cvds.prometeo.repository.RoutineExerciseRepository;
 import edu.eci.cvds.prometeo.repository.RoutineRepository;
 import edu.eci.cvds.prometeo.service.*;
 import edu.eci.cvds.prometeo.dto.*;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -77,6 +77,9 @@ public class UserController {
 
     @Autowired
     private GoalService goalService;
+
+    @Autowired
+    private ReportService reportService;
 
     // -----------------------------------------------------
     // User profile endpoints
@@ -930,21 +933,145 @@ public class UserController {
     }
 
     @GetMapping("/gym/sessions/{sessionId}")
-@Operation(summary = "Get session by ID", description = "Retrieves details of a specific gym session")
-@ApiResponse(responseCode = "200", description = "Session found")
-@ApiResponse(responseCode = "404", description = "Session not found")
-public ResponseEntity<Object> getSessionById(
-        @Parameter(description = "Session ID") @PathVariable UUID sessionId) {
-    
-    try {
-        Object session = gymSessionService.getSessionById(sessionId);
-        return ResponseEntity.ok(session);
-    } catch (Exception e) {
-        Map<String, String> error = new HashMap<>();
-        error.put("error", e.getMessage());
-        return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
+    @Operation(summary = "Get session by ID", description = "Retrieves details of a specific gym session")
+    @ApiResponse(responseCode = "200", description = "Session found")
+    @ApiResponse(responseCode = "404", description = "Session not found")
+    public ResponseEntity<Object> getSessionById(
+            @Parameter(description = "Session ID") @PathVariable UUID sessionId) {
+
+        try {
+            Object session = gymSessionService.getSessionById(sessionId);
+            return ResponseEntity.ok(session);
+        } catch (Exception e) {
+            Map<String, String> error = new HashMap<>();
+            error.put("error", e.getMessage());
+            return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
+        }
     }
-}
+
+     // -----------------------------------------------------
+     // Reports and analysis endpoints
+     // -----------------------------------------------------
+
+    @GetMapping("/user-progress")
+    @Operation(
+            summary = "Generate user progress report",
+            description = "Returns a report with the user's physical progress over time (e.g., weight and goals).",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Report generated successfully",
+                            content = @Content(mediaType = "application/octet-stream")),
+                    @ApiResponse(responseCode = "400", description = "Invalid parameters", content = @Content),
+                    @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)
+            }
+    )
+    public ResponseEntity<byte[]> getUserProgressReport(
+            @Parameter(name = "userId", description = "UUID of the user", required = true, in = ParameterIn.QUERY)
+            @RequestParam UUID userId,
+
+            @Parameter(name = "format", description = "Report format: PDF, XLSX, CSV, JSON", required = true, in = ParameterIn.QUERY)
+            @RequestParam ReportFormat format
+    ) {
+        byte[] report = reportService.generateUserProgressReport(userId, format);
+        return buildResponse(report, format, "user_progress_report");
+    }
+
+    @GetMapping("/gym-usage")
+    @Operation(
+            summary = "Generate gym usage report",
+            description = "Returns statistics about gym usage (reservations, capacity, duration) for a given date range.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Report generated successfully", content = @Content),
+                    @ApiResponse(responseCode = "400", description = "Invalid parameters", content = @Content),
+                    @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)
+            }
+    )
+    public ResponseEntity<byte[]> getGymUsageReport(
+            @Parameter(name = "startDate", description = "Start date in yyyy-MM-dd format", required = true)
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+
+            @Parameter(name = "endDate", description = "End date in yyyy-MM-dd format", required = true)
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+
+            @Parameter(name = "format", description = "Report format: PDF, XLSX, CSV, JSON", required = true, in = ParameterIn.QUERY)
+            @RequestParam ReportFormat format
+    ) {
+        byte[] report = reportService.generateGymUsageReport(startDate, endDate, format);
+        return buildResponse(report, format, "gym_usage_report");
+    }
+
+    @GetMapping("/attendance")
+    @Operation(
+            summary = "Generate attendance report",
+            description = "Returns daily attendance statistics for the gym within a date range.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Report generated successfully", content = @Content),
+                    @ApiResponse(responseCode = "400", description = "Invalid parameters", content = @Content),
+                    @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)
+            }
+    )
+    public ResponseEntity<byte[]> getAttendanceReport(
+            @Parameter(name = "startDate", description = "Start date in yyyy-MM-dd format", required = true)
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+
+            @Parameter(name = "endDate", description = "End date in yyyy-MM-dd format", required = true)
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+
+            @Parameter(name = "format", description = "Report format: PDF, XLSX, CSV, JSON", required = true, in = ParameterIn.QUERY)
+            @RequestParam ReportFormat format
+    ) {
+        byte[] report = reportService.getAttendanceStatistics(startDate, endDate, format);
+        return buildResponse(report, format, "attendance_report");
+    }
+
+    /**
+     * Builds an HTTP response with appropriate headers for file download,
+     * based on the specified report format.
+     *
+     * <p>This method sets the correct <code>Content-Type</code> and
+     * <code>Content-Disposition</code> headers to allow clients to download
+     * the report in the requested format (PDF, XLSX, CSV, JSON).</p>
+     *
+     * @param content the byte array representing the report content
+     * @param format the format of the report (PDF, XLSX, CSV, JSON)
+     * @param filenameBase the base name for the file (without extension)
+     * @return a ResponseEntity with the file content and appropriate headers
+     */
+    private ResponseEntity<byte[]> buildResponse(byte[] content, ReportFormat format, String filenameBase) {
+        String contentType;
+        String extension;
+
+        switch (format) {
+            case PDF -> {
+                contentType = "application/pdf";
+                extension = ".pdf";
+            }
+            case XLSX -> {
+                contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+                extension = ".xlsx";
+            }
+            case CSV -> {
+                contentType = "text/csv";
+                extension = ".csv";
+            }
+            case JSON -> {
+                contentType = "application/json";
+                extension = ".json";
+            }
+            default -> {
+                contentType = "application/octet-stream";
+                extension = "";
+            }
+        }
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.parseMediaType(contentType));
+        headers.setContentDisposition(ContentDisposition.attachment()
+                .filename(filenameBase + extension)
+                .build());
+
+        return new ResponseEntity<>(content, headers, HttpStatus.OK);
+    }
+
     // // ------------------------------------------------------
     // // Equipment reservations endpoints
     // // -----------------------------------------------------
@@ -973,77 +1100,6 @@ public ResponseEntity<Object> getSessionById(
     // @Parameter(description = "Reservation ID") @PathVariable Long reservationId,
     // @Parameter(description = "Equipment reservation ID") @PathVariable Long
     // equipmentReservationId);
-
-    // // -----------------------------------------------------
-    // // Recommendations endpoints
-    // // -----------------------------------------------------
-
-    // @GetMapping("/{userId}/recommended-routines")
-    // @Operation(summary = "Get recommended routines", description = "Retrieves
-    // personalized routine recommendations for a user")
-    // public ResponseEntity<List<Routine>>
-    // getRecommendedRoutines(@Parameter(description = "User ID") @PathVariable Long
-    // userId);
-
-    // @GetMapping("/{userId}/recommended-classes")
-    // @Operation(summary = "Get recommended classes", description = "Retrieves
-    // personalized class recommendations for a user")
-    // public ResponseEntity<List<ClassRecommendationDTO>>
-    // getRecommendedClasses(@Parameter(description = "User ID") @PathVariable Long
-    // userId);
-
-    // // -----------------------------------------------------
-    // // Reports and analysis endpoints
-    // // -----------------------------------------------------
-
-    // @GetMapping("/{userId}/reports/attendance")
-    // @Operation(summary = "Get attendance report", description = "Generates an
-    // attendance report for a user")
-    // public ResponseEntity<AttendanceReportDTO> getUserAttendanceReport(
-    // @Parameter(description = "User ID") @PathVariable Long userId,
-    // @Parameter(description = "Start date") @RequestParam(required = false)
-    // @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-    // @Parameter(description = "End date") @RequestParam(required = false)
-    // @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
-
-    // AttendanceReportDTO attendanceReport =
-    // reportService.generateAttendanceReport(userId, startDate, endDate);
-
-    // return ResponseEntity.ok(attendanceReport);
-    // }
-
-    // @GetMapping("/{userId}/reports/physical-evolution")
-    // @Operation(summary = "Get physical evolution report", description =
-    // "Generates a physical evolution report for a user")
-    // public ResponseEntity<PhysicalEvolutionReportDTO>
-    // getUserPhysicalEvolutionReport(
-    // @Parameter(description = "User ID") @PathVariable Long userId,
-    // @Parameter(description = "Start date") @RequestParam(required = false)
-    // @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-    // @Parameter(description = "End date") @RequestParam(required = false)
-    // @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
-    // PhysicalEvolutionReportDTO physicalEvolutionReport =
-    // reportService.generatePhysicalEvolutionReport(userId, startDate, endDate);
-
-    // return ResponseEntity.ok(physicalEvolutionReport);
-    // }
-
-    // @GetMapping("/{userId}/reports/routine-compliance")
-    // @Operation(summary = "Get routine compliance report", description =
-    // "Generates a routine compliance report for a user")
-    // public ResponseEntity<RoutineComplianceReportDTO>
-    // getUserRoutineComplianceReport(
-    // @Parameter(description = "User ID") @PathVariable Long userId,
-    // @Parameter(description = "Start date") @RequestParam(required = false)
-    // @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-    // @Parameter(description = "End date") @RequestParam(required = false)
-    // @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
-
-    // RoutineComplianceReportDTO routineComplianceReport =
-    // reportService.generateRoutineComplianceReport(userId, startDate, endDate);
-
-    // return ResponseEntity.ok(routineComplianceReport);
-    // }
 
     // // -----------------------------------------------------
     // // Admin/Trainer specific endpoints

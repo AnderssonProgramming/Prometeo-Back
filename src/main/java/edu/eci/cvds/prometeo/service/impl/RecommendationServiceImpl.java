@@ -5,7 +5,6 @@ import edu.eci.cvds.prometeo.model.*;
 import edu.eci.cvds.prometeo.openai.OpenAiClient;
 import edu.eci.cvds.prometeo.repository.*;
 import edu.eci.cvds.prometeo.service.RecommendationService;
-import edu.eci.cvds.prometeo.huggingface.HuggingFaceClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -14,14 +13,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import java.time.LocalDate;
-import java.time.LocalTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
+
+/**
+ * Implementation of the {@link RecommendationService} interface.
+ * This service uses OpenAI to generate personalized routine recommendations for users based on their goals.
+ */
 @Service
 public class RecommendationServiceImpl implements RecommendationService {
 
@@ -41,6 +40,11 @@ public class RecommendationServiceImpl implements RecommendationService {
     @Autowired
     private OpenAiClient openAiClient;
 
+    /**
+     * Generates and saves routine recommendations for a user using their goals and available routines.
+     *
+     * @param userId The UUID of the user for whom recommendations are to be generated.
+     */
     @Override
     public List<Map<Routine, Integer>> recommendRoutines(UUID userId) {
         User user = userRepository.findById(userId)
@@ -60,7 +64,13 @@ public class RecommendationServiceImpl implements RecommendationService {
             return new ArrayList<>();
         }
     }
-
+    /*
+     * Builds a natural language prompt to send to OpenAI based on user goals and available routines.
+     *
+     * @param goals        The list of active goals for the user.
+     * @param allRoutines  All available routines in the system.
+     * @return A formatted string prompt describing goals and routines.
+     */
     private String buildPrompt(List<Goal> goals, List<Routine> allRoutines) {
         StringBuilder prompt = new StringBuilder();
         prompt.append("Las metas del usuario son:\n");
@@ -81,35 +91,48 @@ public class RecommendationServiceImpl implements RecommendationService {
         return prompt.toString();
     }
 
-private List<UUID> parseUUIDList(String response) {
-    List<UUID> result = new ArrayList<>();
-    try {
-        // Extraer la respuesta del formato JSON de OpenAI
-        JsonNode responseJson = new ObjectMapper().readTree(response);
-        String content = responseJson.path("choices").path(0).path("message").path("content").asText("");
-        
-        // Buscar texto que parezca un UUID en la respuesta
-        Pattern uuidPattern = Pattern.compile("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", 
-                                              Pattern.CASE_INSENSITIVE);
-        Matcher matcher = uuidPattern.matcher(content);
-        
-        // Añadir todos los UUIDs encontrados
-        while (matcher.find() && result.size() < 10) {
-            try {
-                UUID uuid = UUID.fromString(matcher.group());
-                result.add(uuid);
-            } catch (IllegalArgumentException e) {
-                // Ignora los formatos UUID inválidos
-            }
-        }
-    } catch (Exception e) {
-        // Log the error
-        System.err.println("Error parsing OpenAI response: " + e.getMessage());
-    }
-    
-    return result;
-}
+    /*
+     * Extracts UUIDs from OpenAI response by parsing the JSON and searching for valid UUID patterns.
+     *
+     * @param response The raw JSON response from the OpenAI model.
+     * @return A list of up to 10 UUIDs extracted from the response.
+     */
+    private List<UUID> parseUUIDList(String response) {
+        List<UUID> result = new ArrayList<>();
+        try {
+            // Extraer la respuesta del formato JSON de OpenAI
+            JsonNode responseJson = new ObjectMapper().readTree(response);
+            String content = responseJson.path("choices").path(0).path("message").path("content").asText("");
 
+            // Buscar texto que parezca un UUID en la respuesta
+            Pattern uuidPattern = Pattern.compile("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+                                                  Pattern.CASE_INSENSITIVE);
+            Matcher matcher = uuidPattern.matcher(content);
+
+            // Añadir todos los UUIDs encontrados
+            while (matcher.find() && result.size() < 10) {
+                try {
+                    UUID uuid = UUID.fromString(matcher.group());
+                    result.add(uuid);
+                } catch (IllegalArgumentException e) {
+                    // Ignora los formatos UUID inválidos
+                }
+            }
+        } catch (Exception e) {
+            // Log the error
+            System.err.println("Error parsing OpenAI response: " + e.getMessage());
+        }
+
+        return result;
+    }
+
+    /*
+     * Creates or updates recommendation entities for the user based on routine IDs.
+     *
+     * @param routineIds The list of routine UUIDs recommended by the AI.
+     * @param user       The user receiving the recommendations.
+     * @return A list of maps associating each recommended routine with its weight.
+     */
     private List<Map<Routine, Integer>> buildRecommendations(List<UUID> routineIds, User user) {
         List<Map<Routine, Integer>> recommendedRoutines = new ArrayList<>();
         for (int i = 0; i < routineIds.size(); i++) {
@@ -142,6 +165,12 @@ private List<UUID> parseUUIDList(String response) {
         return recommendedRoutines;
     }
 
+    /**
+     * Retrieves all active recommended routines for a specific user.
+     *
+     * @param userId The UUID of the user.
+     * @return A list of routines recommended to the user.
+     */
     @Override
     public List<Routine> findUserRoutines(UUID userId) {
         userRepository.findById(userId)
