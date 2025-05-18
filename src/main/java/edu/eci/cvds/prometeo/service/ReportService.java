@@ -1,5 +1,7 @@
 package edu.eci.cvds.prometeo.service;
 
+import edu.eci.cvds.prometeo.model.enums.ReportFormat;
+
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
@@ -12,65 +14,35 @@ import java.util.UUID;
 public interface ReportService {
 
     /**
-     * Generates a user progress report
-     * @param userId ID of the user
-     * @param startDate Start date
-     * @param endDate End date
-     * @param format Format of the report
-     * @return Report data as a JSON-compatible map
+     * Generates a user progress report.
+     * This report includes the user's physical progress data such as weight and goal.
+     *
+     * @param userId ID of the user whose progress data is to be reported.
+     * @param format Format in which the report will be generated (e.g., PDF, XLSX, CSV, JSON).
+     * @return A byte array containing the generated report data in the requested format.
      */
-    // Map<String, Object> generateUserProgressReport(UUID userId, LocalDate startDate, LocalDate endDate, String format);
+    byte[] generateUserProgressReport(UUID userId, ReportFormat format);
 
     /**
-     * Generates a gym usage report
-     * @param startDate Start date
-     * @param endDate End date
-     * @param groupBy How to group data (day, week, month)
-     * @param format Format of the report
-     * @return List of JSON-compatible maps with usage data
+     * Generates a gym usage report.
+     * This report provides details about gym session usage, such as total capacity, reserved spots, and utilization rate,
+     * for a given date range.
+     *
+     * @param startDate The start date of the period for the report.
+     * @param endDate The end date of the period for the report.
+     * @param format Format in which the report will be generated (e.g., PDF, XLSX, CSV, JSON).
+     * @return A byte array containing the generated gym usage report in the requested format.
      */
-    List<Map<String, Object>> generateGymUsageReport(LocalDate startDate, LocalDate endDate, String groupBy, String format);
+    byte[] generateGymUsageReport(LocalDate startDate, LocalDate endDate, ReportFormat format);
 
     /**
-     * Generates a trainer performance report
-     * @param trainerId Optional trainer ID (null for all trainers)
-     * @param startDate Start date
-     * @param endDate End date
-     * @param format Format of the report
-     * @return List of JSON-compatible maps with trainer data
+     * Gets attendance statistics for gym sessions within a specific date range.
+     * This includes data such as the number of attendees for each session.
+     *
+     * @param startDate The start date of the period for the statistics.
+     * @param endDate The end date of the period for the statistics.
+     * @param format Format in which the statistics will be generated (e.g., PDF, XLSX, CSV, JSON).
+     * @return A byte array containing the attendance statistics in the requested format.
      */
-    // List<Map<String, Object>> generateTrainerReport(Optional<UUID> trainerId, LocalDate startDate, LocalDate endDate, String format);
-
-    /**
-     * Gets attendance statistics
-     * @param startDate Start date
-     * @param endDate End date
-     * @return Map of statistics
-     */
-    Map<String, Integer> getAttendanceStatistics(LocalDate startDate, LocalDate endDate);
-
-    /**
-     * Gets routine usage statistics
-     * @param startDate Start date
-     * @param endDate End date
-     * @return Map of routine IDs to usage counts
-     */
-    // Map<UUID, Integer> getRoutineUsageStatistics(LocalDate startDate, LocalDate endDate);
-
-    /**
-     * Gets progress statistics for a user
-     * @param userId ID of the user
-     * @param months Number of months to analyze
-     * @return Map of statistics
-     */
-    // Map<String, Object> getUserProgressStatistics(UUID userId, int months);
-
-    /**
-     * Gets gym capacity utilization
-     * @param startDate Start date
-     * @param endDate End date
-     * @param groupBy How to group data (hour, day, week)
-     * @return Map of time periods to utilization percentages
-     */
-    Map<String, Double> getCapacityUtilization(LocalDate startDate, LocalDate endDate, String groupBy);
+    byte[] getAttendanceStatistics(LocalDate startDate, LocalDate endDate, ReportFormat format);
 }
