@@ -1,172 +1,201 @@
-// package edu.eci.cvds.prometeo.service.impl;
+package edu.eci.cvds.prometeo.service.impl;
 
-// import edu.eci.cvds.prometeo.service.ReportService;
-// import edu.eci.cvds.prometeo.repository.ReservationRepository;
-// import edu.eci.cvds.prometeo.repository.UserRoutineRepository;
-// import edu.eci.cvds.prometeo.repository.UserRepository;
-// import edu.eci.cvds.prometeo.repository.RoutineRepository;
-// import edu.eci.cvds.prometeo.model.Reservation;
-// import edu.eci.cvds.prometeo.model.UserRoutine;
-// import edu.eci.cvds.prometeo.model.Routine;
+import edu.eci.cvds.prometeo.model.GymSession;
+import edu.eci.cvds.prometeo.model.PhysicalProgress;
+import edu.eci.cvds.prometeo.repository.*;
+import edu.eci.cvds.prometeo.service.ReportService;
+import edu.eci.cvds.prometeo.model.enums.ReportFormat;
 
-// import org.springframework.beans.factory.annotation.Autowired;
-// import org.springframework.stereotype.Service;
+import edu.eci.cvds.prometeo.service.report.ReportGenerator;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
-// import java.time.LocalDate;
-// import java.time.format.DateTimeFormatter;
-// import java.util.*;
-// import java.util.stream.Collectors;
-// import java.util.Optional;
-// import java.util.UUID;
+import java.io.IOException;
+import java.time.LocalDate;
+import java.util.*;
+import java.util.function.Function;
 
-// @Service
-// public class ReportServiceImpl implements ReportService {
+/**
+ * Implementation of the ReportService interface.
+ * This service generates various reports including user progress, gym usage, and attendance statistics.
+ */
+@Service
+public class ReportServiceImpl implements ReportService {
+    @Autowired
+    private PhysicalProgressRepository physicalProgressRepository;
+    @Autowired
+    private GymSessionRepository gymSessionRepository;
 
-//     private final ReservationRepository reservationRepository;
-//     private final UserRoutineRepository userRoutineRepository;
-//     private final UserRepository userRepository;
-//     private final RoutineRepository routineRepository;
+    private final ReportGenerator reportGenerator = new ReportGenerator();
 
-//     @Autowired
-//     public ReportServiceImpl(
-//             ReservationRepository reservationRepository,
-//             UserRoutineRepository userRoutineRepository,
-//             UserRepository userRepository,
-//             RoutineRepository routineRepository
-//     ) {
-//         this.reservationRepository = reservationRepository;
-//         this.userRoutineRepository = userRoutineRepository;
-//         this.userRepository = userRepository;
-//         this.routineRepository = routineRepository;
-//     }
+    /**
+     * Generates a report on user progress (weight and goal data).
+     *
+     * @param userId ID of the user whose progress data is to be reported.
+     * @param format The desired format for the report (e.g., PDF, XLSX, CSV, JSON).
+     * @return A byte array containing the report data in the requested format.
+     */
+    @Override
+    public byte[] generateUserProgressReport(UUID userId, ReportFormat format) {
+        List<PhysicalProgress> data = physicalProgressRepository.findByUserIdOrderByRecordDateDesc(userId);
 
-//     // @Override
-//     // public Map<String, Object> generateUserProgressReport(UUID userId, LocalDate startDate, LocalDate endDate, String format) {
-//     //     // Ejemplo sencillo: solo cuenta rutinas asignadas y reservas hechas en el periodo
-//     //     Map<String, Object> report = new HashMap<>();
-//     //     List<UserRoutine> userRoutines = userRoutineRepository.findByUserIdAndAssignmentDateBetween(userId, startDate, endDate);
-//     //     List<Reservation> reservations = reservationRepository.findByUserIdAndDateBetween(userId, startDate, endDate);
+        List<String> headers = List.of("Fecha", "Peso", "Meta");
+        Function<PhysicalProgress, List<String>> rowMapper = p -> List.of(
+              p.getRecordDate().toString(),
+              p.getWeight() != null ? String.valueOf(p.getWeight().getValue()) : "N/A",
+              p.getPhysicalGoal() != null ? p.getPhysicalGoal() : "N/A"
+        );
 
-//     //     report.put("userId", userId);
-//     //     report.put("routinesAssigned", userRoutines.size());
-//     //     report.put("reservations", reservations.size());
-//     //     report.put("period", Map.of("start", startDate, "end", endDate));
-//     //     return report;
-//     // }
+        Function<PhysicalProgress, String> lineMapper = p ->
+              "Fecha: " + p.getRecordDate() +
+              " | Peso: " + (p.getWeight() != null ? p.getWeight().getValue() + "kg" : "N/A") +
+              " | Meta: " + (p.getPhysicalGoal() != null ? p.getPhysicalGoal() : "N/A");
 
-//     @Override
-//     public List<Map<String, Object>> generateGymUsageReport(LocalDate startDate, LocalDate endDate, String groupBy, String format) {
-//         List<Reservation> reservations = reservationRepository.findByDateBetween(startDate, endDate);
-//         Map<String, Long> grouped;
-//         DateTimeFormatter formatter;
-//         if ("week".equalsIgnoreCase(groupBy)) {
-//             formatter = DateTimeFormatter.ofPattern("YYYY-'W'ww");
-//             grouped = reservations.stream().collect(Collectors.groupingBy(
-//                     r -> r.getDate().format(formatter), Collectors.counting()));
-//         } else if ("month".equalsIgnoreCase(groupBy)) {
-//             formatter = DateTimeFormatter.ofPattern("yyyy-MM");
-//             grouped = reservations.stream().collect(Collectors.groupingBy(
-//                     r -> r.getDate().format(formatter), Collectors.counting()));
-//         } else {
-//             formatter = DateTimeFormatter.ISO_DATE;
-//             grouped = reservations.stream().collect(Collectors.groupingBy(
-//                     r -> r.getDate().format(formatter), Collectors.counting()));
-//         }
-//         List<Map<String, Object>> report = new ArrayList<>();
-//         for (Map.Entry<String, Long> entry : grouped.entrySet()) {
-//             Map<String, Object> item = new HashMap<>();
-//             item.put("period", entry.getKey());
-//             item.put("reservations", entry.getValue());
-//             report.add(item);
-//         }
-//         return report;
-//     }
+        try {
+          return switch (format) {
+              case PDF -> reportGenerator.generatePDF(data, "Reporte de Progreso Físico", lineMapper);
+              case XLSX -> reportGenerator.generateXLSX(data, headers, rowMapper);
+              case CSV -> reportGenerator.generateCSV(data, headers, rowMapper);
+              case JSON -> reportGenerator.generateJSON(data);
+          };
+        } catch (IOException e) {
+          throw new RuntimeException("Error generando reporte en formato: " + format, e);
+        }
+    }
 
-//     // @Override
-//     // public List<Map<String, Object>> generateTrainerReport(Optional<UUID> trainerId, LocalDate startDate, LocalDate endDate, String format) {
-//     //     List<Reservation> reservations;
-//     //     if (trainerId.isPresent()) {
-//     //         reservations = reservationRepository.findByTrainerIdAndDateBetween(trainerId.get(), startDate, endDate);
-//     //     } else {
-//     //         reservations = reservationRepository.findByDateBetween(startDate, endDate);
-//     //     }
-//     //     List<Map<String, Object>> report = new ArrayList<>();
-//     //     for (Reservation r : reservations) {
-//     //         Map<String, Object> item = new HashMap<>();
-//     //         item.put("date", r.getDate());
-//     //         item.put("userId", r.getUserId());
-//     //         item.put("trainerId", r.getTrainerId());
-//     //         item.put("status", r.getStatus());
-//     //         report.add(item);
-//     //     }
-//     //     return report;
-//     // }
+    /**
+     * Generates a gym usage report.
+     *
+     * @param startDate The start date of the period for the gym usage report.
+     * @param endDate The end date of the period for the gym usage report.
+     * @param format The desired format for the report (e.g., PDF, XLSX, CSV, JSON).
+     * @return A byte array containing the gym usage report data in the requested format.
+     */
+    @Override
+    public byte[] generateGymUsageReport(LocalDate startDate, LocalDate endDate, ReportFormat format) {
+        List<GymSession> sessions = gymSessionRepository.findBySessionDateBetween(startDate, endDate);
 
-//     @Override
-//     public Map<String, Integer> getAttendanceStatistics(LocalDate startDate, LocalDate endDate) {
-//         List<Reservation> reservations = reservationRepository.findByDateBetween(startDate, endDate);
-//         int attended = 0;
-//         int missed = 0;
-//         for (Reservation r : reservations) {
-//             if (Boolean.TRUE.equals(r.getAttended())) {
-//                 attended++;
-//             } else {
-//                 missed++;
-//             }
-//         }
-//         Map<String, Integer> stats = new HashMap<>();
-//         stats.put("attended", attended);
-//         stats.put("missed", missed);
-//         stats.put("total", reservations.size());
-//         return stats;
-//     }
+        Map<String, Object> metrics = generateMetrics(sessions, startDate, endDate);
+        List<Map<String, Object>> reportData = List.of(metrics);
+        List<String> headers = List.of("Fecha", "Capacidad Total", "Reservas Totales", "Tasa de Utilización", "Utilización Promedio", "Duración Promedio");
 
-//     // @Override
-//     // public Map<UUID, Integer> getRoutineUsageStatistics(LocalDate startDate, LocalDate endDate) {
-//     //     List<UserRoutine> userRoutines = userRoutineRepository.findByAssignmentDateBetween(startDate, endDate);
-//     //     Map<UUID, Integer> usage = new HashMap<>();
-//     //     for (UserRoutine ur : userRoutines) {
-//     //         usage.put(ur.getRoutineId(), usage.getOrDefault(ur.getRoutineId(), 0) + 1);
-//     //     }
-//     //     return usage;
-//     // }
+        Function<GymSession, List<String>> rowMapper = this::mapRow;
+        Function<GymSession, String> lineMapper = this::mapLine;
 
-//     // @Override
-//     // public Map<String, Object> getUserProgressStatistics(UUID userId, int months) {
-//     //     LocalDate now = LocalDate.now();
-//     //     LocalDate from = now.minusMonths(months);
-//     //     List<UserRoutine> userRoutines = userRoutineRepository.findByUserIdAndAssignmentDateBetween(userId, from, now);
-//     //     Map<String, Object> stats = new HashMap<>();
-//     //     stats.put("routinesAssigned", userRoutines.size());
-//     //     stats.put("period", Map.of("start", from, "end", now));
-//     //     return stats;
-//     // }
+        try {
+            return switch (format) {
+                case PDF -> reportGenerator.generatePDF(sessions, "Reporte de Uso del Gimnasio", lineMapper);
+                case XLSX -> reportGenerator.generateXLSX(sessions, headers, rowMapper);
+                case CSV -> reportGenerator.generateCSV(sessions, headers, rowMapper);
+                case JSON -> reportGenerator.generateJSON(reportData);
+            };
+        } catch (IOException e) {
+            throw new RuntimeException("Error generando reporte en formato: " + format, e);
+        }
+    }
 
-//     @Override
-//     public Map<String, Double> getCapacityUtilization(LocalDate startDate, LocalDate endDate, String groupBy) {
-//         List<Reservation> reservations = reservationRepository.findByDateBetween(startDate, endDate);
-//         Map<String, Integer> countByGroup = new HashMap<>();
-//         Map<String, Integer> capacityByGroup = new HashMap<>();
-//         DateTimeFormatter formatter;
-//         if ("day".equalsIgnoreCase(groupBy)) {
-//             formatter = DateTimeFormatter.ISO_DATE;
-//         } else if ("week".equalsIgnoreCase(groupBy)) {
-//             formatter = DateTimeFormatter.ofPattern("YYYY-'W'ww");
-//         } else {
-//             formatter = DateTimeFormatter.ofPattern("YYYY-MM");
-//         }
-//         for (Reservation r : reservations) {
-//             String key = r.getDate().format(formatter);
-//             countByGroup.put(key, countByGroup.getOrDefault(key, 0) + 1);
-//             // Para demo, capacidad fija de 10 por grupo
-//             capacityByGroup.put(key, 10);
-//         }
-//         Map<String, Double> utilization = new HashMap<>();
-//         for (String key : countByGroup.keySet()) {
-//             int used = countByGroup.get(key);
-//             int cap = capacityByGroup.getOrDefault(key, 10);
-//             utilization.put(key, cap == 0 ? 0.0 : (used * 100.0 / cap));
-//         }
-//         return utilization;
-//     }
-// }
+    /*
+     * Generates metrics for the gym usage report.
+     *
+     * @param sessions List of gym sessions to generate metrics from.
+     * @param startDate The start date of the period for the metrics.
+     * @param endDate The end date of the period for the metrics.
+     * @return A map containing key metrics (total sessions, total capacity, total reserved spots, etc.).
+     */
+    private Map<String, Object> generateMetrics(List<GymSession> sessions, LocalDate startDate, LocalDate endDate) {
+        long totalSessions = sessions.size();
+        int totalCapacity = sessions.stream().mapToInt(GymSession::getCapacity).sum();
+        int totalReserved = sessions.stream().mapToInt(GymSession::getReservedSpots).sum();
+        double utilizationRate = totalCapacity > 0 ? (totalReserved * 100.0 / totalCapacity) : 0;
+        double avgUtilization = sessions.isEmpty() ? 0.0 : sessions.stream()
+                .mapToDouble(s -> s.getReservedSpots() * 100.0 / s.getCapacity())
+                .average().orElse(0.0);
+        double avgDuration = sessions.isEmpty() ? 0.0 : sessions.stream()
+                .mapToLong(s -> s.getDuration().toMinutes())
+                .average().orElse(0.0);
+
+        return Map.of(
+                "startDate", startDate.toString(),
+                "endDate", endDate.toString(),
+                "totalSessions", totalSessions,
+                "totalCapacity", totalCapacity,
+                "totalReservedSpots", totalReserved,
+                "utilizationRate", String.format("%.2f", utilizationRate) + "%",
+                "averageUtilizationPerSession", String.format("%.2f", avgUtilization) + "%",
+                "averageSessionDurationMinutes", String.format("%.2f", avgDuration)
+        );
+    }
+
+    /*
+     * Maps a gym session to a row of data for the report.
+     *
+     * @param session The gym session to map.
+     * @return A list of strings representing the session data for the report.
+     */
+    private List<String> mapRow(GymSession session) {
+        return List.of(
+                session.getSessionDate().toString(),
+                String.valueOf(session.getCapacity()),
+                String.valueOf(session.getReservedSpots()),
+                String.format("%.2f", session.getReservedSpots() * 100.0 / session.getCapacity()) + "%",
+                String.format("%.2f", session.getReservedSpots() * 100.0 / session.getCapacity()),
+                String.format("%.2f", session.getDuration().toMinutes())
+        );
+    }
+
+    /*
+     * Maps a gym session to a line of data for the report.
+     *
+     * @param session The gym session to map.
+     * @return A string representing the session data for the report.
+     */
+private String mapLine(GymSession session) {
+    return String.format(
+            "Fecha: %s | Capacidad Total: %d | Reservas Totales: %d | Tasa de Utilización: %.2f%% | Utilización Promedio: %.2f%% | Duración Promedio: %d minutos",
+            session.getSessionDate(), session.getCapacity(), session.getReservedSpots(),
+            session.getReservedSpots() * 100.0 / session.getCapacity(),
+            session.getReservedSpots() * 100.0 / session.getCapacity(),
+            session.getDuration().toMinutes()
+    );
+}
+    
+
+    /**
+     * Generates attendance statistics for the gym sessions within a given date range.
+     *
+     * @param startDate The start date of the period for the attendance statistics.
+     * @param endDate The end date of the period for the attendance statistics.
+     * @param format The desired format for the statistics report (e.g., PDF, XLSX, CSV, JSON).
+     * @return A byte array containing the attendance statistics in the requested format.
+     */
+    @Override
+    public byte[] getAttendanceStatistics(LocalDate startDate, LocalDate endDate, ReportFormat format) {
+        List<GymSession> sessions = gymSessionRepository.findBySessionDateBetween(startDate, endDate);
+        Map<LocalDate, Integer> attendanceStats = new HashMap<>();
+        for (GymSession session : sessions) {
+            attendanceStats.put(session.getSessionDate(), session.getReservedSpots());
+        }
+        List<String> headers = List.of("Fecha", "Asistencias");
+        Function<Map.Entry<LocalDate, Integer>, List<String>> rowMapper = entry -> List.of(
+                entry.getKey().toString(),
+                String.valueOf(entry.getValue())
+        );
+
+        Function<Map.Entry<LocalDate, Integer>, String> lineMapper = entry ->
+                "Fecha: " + entry.getKey() + " | Asistencias: " + entry.getValue();
+
+        try {
+            return switch (format) {
+                case PDF ->
+                        reportGenerator.generatePDF(attendanceStats.entrySet().stream().toList(), "Reporte de Asistencia al Gimnasio", lineMapper);
+                case XLSX ->
+                        reportGenerator.generateXLSX(attendanceStats.entrySet().stream().toList(), headers, rowMapper);
+                case CSV ->
+                        reportGenerator.generateCSV(attendanceStats.entrySet().stream().toList(), headers, rowMapper);
+                case JSON -> reportGenerator.generateJSON(Collections.singletonList(attendanceStats));
+            };
+        } catch (IOException e) {
+            throw new RuntimeException("Error generando reporte en formato: " + format, e);
+        }
+    }
+}

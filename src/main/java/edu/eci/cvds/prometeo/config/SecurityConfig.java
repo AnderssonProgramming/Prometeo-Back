@@ -28,6 +28,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/users/create").permitAll()
                         // Todas las demás rutas requieren autenticación
                         .requestMatchers("/api/users/trainer/**").hasRole("TRAINER")
+
+                        .anyRequest().hasAnyRole("TRAINER", "STUDENT", "ADMIN")
                 )
                 .formLogin(form -> form.disable())
                 .httpBasic(basic -> basic.disable())
