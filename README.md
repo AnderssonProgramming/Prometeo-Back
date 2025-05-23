@@ -23,6 +23,7 @@ Prometeo-Back is a comprehensive gym management system for the Sports Department
   - [Sprint 2: CI/CD & Azure Integration](#sprint-2-cicd--azure-integration)
   - [Sprint 3: AI Integration](#sprint-3-ai-integration)
   - [Sprint 4: Security & Performance](#sprint-4-security--performance)
+  - [Sprint 5: Frontend Development](#sprint-5-frontend-development)
 - [Design Patterns](#design-patterns)
   - [Data Transfer Objects (DTO)](#data-transfer-objects-dto)
   - [Repository Pattern](#repository-pattern)
@@ -56,12 +57,14 @@ Prometeo-Back is a comprehensive gym management system for the Sports Department
 - **Docker**: Application containerization
 - **Azure DevOps**: Agile project management
 - **GitHub Actions**: CI/CD pipelines
+- **AWS API Gateway**: API management and integration
 - **Jacoco**: Code coverage
 - **Sonar**: Static code analysis
 - **Swagger/OpenAPI**: REST API documentation
 - **Lombok**: Boilerplate code reduction
 - **Dotenv**: Environment variable management
 - **PDFBox & Apache POI**: For document generation and Excel export
+- **React & Next.js**: Frontend development with TypeScript
 
 ## Architecture 🏗️
 
@@ -515,7 +518,7 @@ public class SecurityConfig {
 }
 ```
 
-#### CORS Configuration:
+#### CORS Configuration and AWS API Gateway Integration:
 
 ```java
 @Configuration
@@ -526,14 +529,116 @@ public class CorsConfig implements WebMvcConfigurer {
         registry.addMapping("/**")
                 .allowedOrigins(
                     "http://localhost:3000",
-                    "https://prometeo-front.azurewebsites.net"
+                    "https://prometeo-front.azurewebsites.net",
+                    "https://api.prometeo.aws.gateway.com"
                 )
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
-                .allowCredentials(true)                .maxAge(3600);
+                .allowCredentials(true)
+                .maxAge(3600);
     }
 }
 ```
+
+The API is fully integrated with AWS API Gateway, which serves as a central hub for all API endpoints. This configuration facilitates:
+
+- Centralized endpoint management for all microservices
+- API versioning and documentation
+- Proper CORS configuration across environments
+- Traffic management and throttling
+- Request validation and transformation
+
+The AWS API Gateway provides a unified interface for frontend applications to connect to our backend services, ensuring consistent security and performance monitoring across all endpoints.
+
+```java
+@Configuration
+public class ApiGatewayConfig {
+    
+    @Value("${aws.apigateway.endpoint}")
+    private String apiGatewayEndpoint;
+    
+    @Bean
+    public WebClient webClient() {
+        return WebClient.builder()
+            .baseUrl(apiGatewayEndpoint)
+            .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+            .build();
+    }
+    
+    // Additional AWS API Gateway configuration
+}
+```
+
+### Sprint 5: Frontend Development
+
+![alt text](assets/image12.png)
+
+#### Objectives Achieved:
+
+- Development of a modern and responsive UI using React with Next.js (TypeScript)
+- Implementation of user-friendly interfaces for gym management
+- Integration with backend REST APIs using Axios
+- Module organization by functionality:
+  - Gym Reservation System
+  - Physical Progress Tracking
+  - Routine Management
+  - Statistical Dashboards
+- Utilization of reusable components and Higher-Order Components (HOC)
+- Implementation of specialized libraries for gym scheduling and calendar functionality
+
+#### Frontend Tech Stack:
+
+```typescript
+// Example of a React component using TypeScript and Axios
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { Routine } from '../types/routine';
+import RoutineCard from '../components/RoutineCard';
+
+const RoutineList: React.FC = () => {
+  const [routines, setRoutines] = useState<Routine[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  
+  useEffect(() => {
+    const fetchRoutines = async () => {
+      try {
+        const response = await axios.get<Routine[]>('/api/routines', {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+        
+        setRoutines(response.data);
+        setLoading(false);
+      } catch (error) {
+        console.error('Error fetching routines:', error);
+        setLoading(false);
+      }
+    };
+    
+    fetchRoutines();
+  }, []);
+  
+  if (loading) {
+    return <div>Loading routines...</div>;
+  }
+  
+  return (
+    <div className="routine-list">
+      <h2>Your Routines</h2>
+      <div className="routine-grid">
+        {routines.map(routine => (
+          <RoutineCard key={routine.id} routine={routine} />
+        ))}
+      </div>
+    </div>
+  );
+};
+
+export default RoutineList;
+```
+
+The complete frontend codebase, including detailed documentation and component architecture, can be found in the [Olympus repository](https://github.com/DASarria/Olympus.git).
 
 ## Design Patterns
 
