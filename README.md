@@ -880,7 +880,6 @@ public class UserController {
     @Autowired
     private GymReservationService gymReservationService;
 
-    // TODO: Move this logic to userservice layer
     @Autowired
     private RoutineRepository routineRepository;
 
