@@ -24,9 +24,9 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        // Permitir acceso sin autenticación a la ruta de creación de usuarios
-                        .requestMatchers("/api/users/create").permitAll()
-                        // Todas las demás rutas requieren autenticación
+
+                        .requestMatchers("/api/users/create").authenticated()
+
                         .requestMatchers("/api/users/trainer/**").hasRole("TRAINER")
 
                         .anyRequest().hasAnyRole("TRAINER", "STUDENT", "ADMIN")
