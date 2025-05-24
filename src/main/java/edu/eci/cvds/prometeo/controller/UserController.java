@@ -6,6 +6,7 @@ import edu.eci.cvds.prometeo.repository.RoutineExerciseRepository;
 import edu.eci.cvds.prometeo.repository.RoutineRepository;
 import edu.eci.cvds.prometeo.service.*;
 import edu.eci.cvds.prometeo.dto.*;
+import jakarta.servlet.http.HttpServletRequest;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -116,6 +117,53 @@ public class UserController {
             @Parameter(description = "Role name") @PathVariable String role) {
         return ResponseEntity.ok(userService.getUsersByRole(role));
     }
+    
+    @PostMapping("/create")
+    @Operation(summary = "Create user from JWT", description = "Creates a new user using data from the JWT token")
+    @ApiResponse(responseCode = "201", description = "User created successfully",
+            content = @Content(schema = @Schema(implementation = User.class)))
+    @ApiResponse(responseCode = "400", description = "Invalid input data")
+    @ApiResponse(responseCode = "409", description = "User already exists")
+    public ResponseEntity<User> createUser(HttpServletRequest request) {
+        try {
+            String institutionalId = (String) request.getAttribute("institutionalId");
+            String username = (String) request.getAttribute("username");
+            String name = (String) request.getAttribute("name");
+            String role = (String) request.getAttribute("role");
+    
+            // Log extracted attributes
+            System.out.println("🔍 Extracted attributes:");
+            System.out.println("institutionalId = " + institutionalId);
+            System.out.println("username = " + username);
+            System.out.println("name = " + name);
+            System.out.println("role = " + role);
+    
+            // Validate attributes
+            if (institutionalId == null || name == null || role == null) {
+                System.out.println("❌ Missing required attributes");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+            }
+    
+            // Check if user already exists
+            if (userService.userExistsByInstitutionalId(institutionalId)) {
+                System.out.println("⚠️ User with institutionalId " + institutionalId + " already exists");
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(null);
+            }
+    
+            // Create user
+            UserDTO userDTO = new UserDTO();
+            userDTO.setInstitutionalId(institutionalId);
+            userDTO.setName(name);
+            userDTO.setRole(role);
+    
+            User createdUser = userService.createUser(userDTO);
+            return new ResponseEntity<>(createdUser, HttpStatus.CREATED);
+    
+        } catch (Exception e) {
+            System.out.println("❌ Error creating user: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+        }
+}
 
     @PutMapping("/{id}")
     @Operation(summary = "Update user", description = "Updates a user's basic information")
@@ -125,15 +173,6 @@ public class UserController {
             @Parameter(description = "User ID") @PathVariable String id,
             @Parameter(description = "User data") @RequestBody UserDTO userDTO) {
         return ResponseEntity.ok(userService.updateUser(id, userDTO));
-    }
-
-    @PostMapping
-    @Operation(summary = "Create user", description = "Creates a new user in the system")
-    @ApiResponse(responseCode = "201", description = "User created successfully", content = @Content(schema = @Schema(implementation = User.class)))
-    public ResponseEntity<User> createUser(
-            @Parameter(description = "User data") @RequestBody UserDTO userDTO) {
-        User createdUser = userService.createUser(userDTO);
-        return new ResponseEntity<>(createdUser, HttpStatus.CREATED);
     }
 
     @DeleteMapping("/{id}")
@@ -835,6 +874,8 @@ public class UserController {
             @Parameter(description = "Trainer ID") @PathVariable UUID trainerId) {
 
         List<Object> sessions = gymSessionService.getSessionsByTrainer(trainerId);
+        System.out.println("🔍 Accessing /trainer/{trainerId}/sessions endpoint");
+        System.out.println("🔍 Trainer ID: " + trainerId);
         return ResponseEntity.ok(sessions);
     }
 

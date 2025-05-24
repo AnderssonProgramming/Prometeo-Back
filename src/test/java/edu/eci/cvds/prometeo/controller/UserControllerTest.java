@@ -6,7 +6,7 @@ import edu.eci.cvds.prometeo.model.enums.ReportFormat;
 import edu.eci.cvds.prometeo.repository.RoutineExerciseRepository;
 import edu.eci.cvds.prometeo.repository.RoutineRepository;
 import edu.eci.cvds.prometeo.service.*;
-
+import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -117,17 +117,52 @@ class UserControllerTest {
         assertEquals(users, response.getBody());
         verify(userService).getUsersByRole("STUDENT");
     }
-      @Test
-    void testCreateUser() {
-        // Use the exact object instead of any()
-        when(userService.createUser(userDTO)).thenReturn(testUser);
-        
-        ResponseEntity<User> response = userController.createUser(userDTO);
-        
+
+    @Test
+    void createUserSuccessfully() {
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getAttribute("institutionalId")).thenReturn("A12345");
+        when(request.getAttribute("username")).thenReturn("testuser");
+        when(request.getAttribute("name")).thenReturn("Test User");
+        when(request.getAttribute("role")).thenReturn("USER");
+
+        UserDTO userDTO = new UserDTO();
+        userDTO.setInstitutionalId("A12345");
+        userDTO.setName("Test User");
+        userDTO.setRole("USER");
+
+        User createdUser = new User();
+        createdUser.setInstitutionalId("A12345");
+        createdUser.setName("Test User");
+        createdUser.setRole("USER");
+
+        when(userService.userExistsByInstitutionalId("A12345")).thenReturn(false);
+        when(userService.createUser(userDTO)).thenReturn(createdUser);
+
+        ResponseEntity<User> response = userController.createUser(request);
+
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
-        assertEquals(testUser, response.getBody());
+        assertEquals(createdUser, response.getBody());
+        verify(userService).userExistsByInstitutionalId("A12345");
         verify(userService).createUser(userDTO);
     }
+
+    @Test
+    void createUserFailsWhenAttributesAreMissing() {
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getAttribute("institutionalId")).thenReturn(null);
+        when(request.getAttribute("name")).thenReturn("Test User");
+        when(request.getAttribute("role")).thenReturn("USER");
+
+        ResponseEntity<User> response = userController.createUser(request);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        verify(userService, never()).userExistsByInstitutionalId(anyString());
+        verify(userService, never()).createUser(any(UserDTO.class));
+    }
+
+
+
       @Test
     void testUpdateUser() {
         // Use exact matches instead of any()

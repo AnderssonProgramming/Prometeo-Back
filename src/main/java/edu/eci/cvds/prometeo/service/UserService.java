@@ -38,13 +38,20 @@ import java.util.UUID;
 public interface UserService {
     
     // ------------- Operaciones básicas de usuario -------------
-    
+
     /**
      * Obtener usuario por ID
      * @param id ID del usuario
      * @return Entidad de usuario
      */
     User getUserById(String institutionalId);
+
+    boolean userExistsByInstitutionalId(String institutionalId);
+    /**
+     * Obtener usuario por ID de tarjeta de identificación
+     * @param idCard ID de tarjeta de identificación del usuario
+     * @return Entidad de usuario
+     */
 
     /**
      * Obtener usuario por ID institucional
