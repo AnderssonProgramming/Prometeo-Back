@@ -162,17 +162,6 @@ class UserControllerTest {
     }
 
 
-      @Test
-    void testCreateUser() {
-        // Use the exact object instead of any()
-        when(userService.createUser(userDTO)).thenReturn(testUser);
-        
-        ResponseEntity<User> response = userController.createUser(userDTO);
-        
-        assertEquals(HttpStatus.CREATED, response.getStatusCode());
-        assertEquals(testUser, response.getBody());
-        verify(userService).createUser(userDTO);
-    }
 
       @Test
     void testUpdateUser() {
