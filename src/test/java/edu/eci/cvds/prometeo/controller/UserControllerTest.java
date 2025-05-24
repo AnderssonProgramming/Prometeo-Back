@@ -6,7 +6,6 @@ import edu.eci.cvds.prometeo.model.enums.ReportFormat;
 import edu.eci.cvds.prometeo.repository.RoutineExerciseRepository;
 import edu.eci.cvds.prometeo.repository.RoutineRepository;
 import edu.eci.cvds.prometeo.service.*;
-
 import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -118,6 +117,7 @@ class UserControllerTest {
         assertEquals(users, response.getBody());
         verify(userService).getUsersByRole("STUDENT");
     }
+
     @Test
     void createUserSuccessfully() {
         HttpServletRequest request = mock(HttpServletRequest.class);
@@ -161,6 +161,18 @@ class UserControllerTest {
         verify(userService, never()).createUser(any(UserDTO.class));
     }
 
+
+      @Test
+    void testCreateUser() {
+        // Use the exact object instead of any()
+        when(userService.createUser(userDTO)).thenReturn(testUser);
+        
+        ResponseEntity<User> response = userController.createUser(userDTO);
+        
+        assertEquals(HttpStatus.CREATED, response.getStatusCode());
+        assertEquals(testUser, response.getBody());
+        verify(userService).createUser(userDTO);
+    }
 
       @Test
     void testUpdateUser() {

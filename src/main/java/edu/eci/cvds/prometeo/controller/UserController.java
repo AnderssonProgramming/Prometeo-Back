@@ -6,7 +6,6 @@ import edu.eci.cvds.prometeo.repository.RoutineExerciseRepository;
 import edu.eci.cvds.prometeo.repository.RoutineRepository;
 import edu.eci.cvds.prometeo.service.*;
 import edu.eci.cvds.prometeo.dto.*;
-
 import jakarta.servlet.http.HttpServletRequest;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import org.springframework.beans.factory.annotation.Autowired;
