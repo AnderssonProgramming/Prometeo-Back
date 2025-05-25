@@ -56,7 +56,6 @@ import java.util.UUID;
  */
 @RestController
 @RequestMapping("/api/users")
-@CrossOrigin(origins = "*")
 @Tag(name = "User Controller", description = "API for managing user profiles, physical tracking, goals, routines, and reservations")
 public class UserController {
 
@@ -100,7 +99,12 @@ public class UserController {
     @ApiResponse(responseCode = "404", description = "User not found")
     public ResponseEntity<User> getUserByInstitutionalId(
             @Parameter(description = "Institutional ID") @PathVariable String institutionalId) {
-        return ResponseEntity.ok(userService.getUserByInstitutionalId(institutionalId));
+        try {
+            User user = userService.getUserByInstitutionalId(institutionalId);
+            return ResponseEntity.ok(user);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        }
     }
 
     @GetMapping
