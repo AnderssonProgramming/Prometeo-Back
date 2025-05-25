@@ -31,7 +31,7 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/users/create").authenticated()
-                        .requestMatchers("/api/users/by-institutional-id/{institutionalId}").authenticated()
+                        .requestMatchers("/api/users/trainer/sessions").hasAnyRole("STUDENT", "TRAINER")
                         .requestMatchers("/api/users/trainer/**").hasRole("TRAINER")
                         .anyRequest().hasAnyRole("TRAINER", "STUDENT", "ADMIN")
                 )

@@ -867,7 +867,7 @@ public class UserController {
     @GetMapping("/trainer/sessions")
     @Operation(summary = "Get sessions by date", description = "Retrieves all gym sessions for a specific date")
     @ApiResponse(responseCode = "200", description = "Sessions retrieved successfully")
-    @PreAuthorize("hasRole('TRAINER') or hasRole('ADMIN')")
+    @PreAuthorize("hasRole('TRAINER') or hasRole('ADMIN') or hasRole('STUDENT')")
     public ResponseEntity<List<Object>> getSessionsByDate(
             @Parameter(description = "Date to check") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
 
