@@ -56,7 +56,6 @@ import java.util.UUID;
  */
 @RestController
 @RequestMapping("/api/users")
-@CrossOrigin(origins = "*")
 @Tag(name = "User Controller", description = "API for managing user profiles, physical tracking, goals, routines, and reservations")
 public class UserController {
 
@@ -91,16 +90,26 @@ public class UserController {
     @ApiResponse(responseCode = "200", description = "User found", content = @Content(schema = @Schema(implementation = User.class)))
     @ApiResponse(responseCode = "404", description = "User not found")
     public ResponseEntity<User> getUserById(@Parameter(description = "User ID") @PathVariable String id) {
-        return ResponseEntity.ok(userService.getUserById(id));
+        try {
+            User user = userService.getUserById(id);
+            return ResponseEntity.ok(user);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        }
     }
 
     @GetMapping("/by-institutional-id/{institutionalId}")
     @Operation(summary = "Get user by institutional ID", description = "Retrieves a user by their institutional identifier")
     @ApiResponse(responseCode = "200", description = "User found", content = @Content(schema = @Schema(implementation = User.class)))
     @ApiResponse(responseCode = "404", description = "User not found")
-    public ResponseEntity<User> getUserByInstitutionalId(
+    public ResponseEntity<?> getUserByInstitutionalId(
             @Parameter(description = "Institutional ID") @PathVariable String institutionalId) {
-        return ResponseEntity.ok(userService.getUserByInstitutionalId(institutionalId));
+        try {
+            User user = userService.getUserByInstitutionalId(institutionalId);
+            return ResponseEntity.ok(user);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
     }
 
     @GetMapping
@@ -858,7 +867,7 @@ public class UserController {
     @GetMapping("/trainer/sessions")
     @Operation(summary = "Get sessions by date", description = "Retrieves all gym sessions for a specific date")
     @ApiResponse(responseCode = "200", description = "Sessions retrieved successfully")
-    @PreAuthorize("hasRole('TRAINER') or hasRole('ADMIN')")
+    @PreAuthorize("hasRole('TRAINER') or hasRole('ADMIN') or hasRole('STUDENT')")
     public ResponseEntity<List<Object>> getSessionsByDate(
             @Parameter(description = "Date to check") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
 
