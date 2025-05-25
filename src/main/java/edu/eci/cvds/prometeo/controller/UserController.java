@@ -90,20 +90,25 @@ public class UserController {
     @ApiResponse(responseCode = "200", description = "User found", content = @Content(schema = @Schema(implementation = User.class)))
     @ApiResponse(responseCode = "404", description = "User not found")
     public ResponseEntity<User> getUserById(@Parameter(description = "User ID") @PathVariable String id) {
-        return ResponseEntity.ok(userService.getUserById(id));
+        try {
+            User user = userService.getUserById(id);
+            return ResponseEntity.ok(user);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        }
     }
 
     @GetMapping("/by-institutional-id/{institutionalId}")
     @Operation(summary = "Get user by institutional ID", description = "Retrieves a user by their institutional identifier")
     @ApiResponse(responseCode = "200", description = "User found", content = @Content(schema = @Schema(implementation = User.class)))
     @ApiResponse(responseCode = "404", description = "User not found")
-    public ResponseEntity<User> getUserByInstitutionalId(
+    public ResponseEntity<?> getUserByInstitutionalId(
             @Parameter(description = "Institutional ID") @PathVariable String institutionalId) {
         try {
             User user = userService.getUserByInstitutionalId(institutionalId);
             return ResponseEntity.ok(user);
         } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         }
     }
 

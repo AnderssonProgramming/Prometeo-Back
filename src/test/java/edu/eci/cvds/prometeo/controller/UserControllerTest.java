@@ -87,7 +87,7 @@ class UserControllerTest {
     public void testGetUserByInstitutionalId() {
         when(userService.getUserByInstitutionalId(anyString())).thenReturn(testUser);
         
-        ResponseEntity<User> response = userController.getUserByInstitutionalId("A12345");
+        ResponseEntity<User> response = (ResponseEntity<User>) userController.getUserByInstitutionalId("A12345");
         
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(testUser, response.getBody());
