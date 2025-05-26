@@ -29,7 +29,7 @@ public class SecurityConfig {
         http
                 .cors(cors -> {})
                 .csrf(csrf -> csrf.disable())
-                .authorizeHttpRequests(auth -> auth
+                .authorizeHttpRequests(request -> request
                         .requestMatchers("/api/users/create").authenticated()
                         .requestMatchers("/api/users/trainer/sessions").hasAnyRole("STUDENT", "TRAINER")
                         .requestMatchers("/api/users/trainer/**").hasRole("TRAINER")
