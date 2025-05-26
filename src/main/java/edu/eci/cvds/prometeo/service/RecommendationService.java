@@ -12,17 +12,18 @@ import java.util.UUID;
 public interface RecommendationService {
 
     /**
-     * Recommends routines for a user based on their profile and progress
-     * @param userId ID of the user
-     * @return List of recommended routines with compatibility scores
+     * Generates personalized routine recommendations for a specific user.
+     *
+     * @param userId the unique identifier of the user
      */
     List<Map<Routine, Integer>> recommendRoutines(UUID userId);
 
 
     /**
-     * Finds routines from user
-     * @param userId ID of the user
-     * @return List of user IDs to similarity scores
+     * Retrieves the list of routines associated with a specific user.
+     *
+     * @param userId the unique identifier of the user
+     * @return a list of the user's routines
      */
     List<Routine> findUserRoutines(UUID userId);
 }

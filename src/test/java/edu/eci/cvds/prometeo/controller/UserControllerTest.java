@@ -2,17 +2,20 @@ package edu.eci.cvds.prometeo.controller;
 
 import edu.eci.cvds.prometeo.dto.*;
 import edu.eci.cvds.prometeo.model.*;
+import edu.eci.cvds.prometeo.model.enums.ReportFormat;
 import edu.eci.cvds.prometeo.repository.RoutineExerciseRepository;
 import edu.eci.cvds.prometeo.repository.RoutineRepository;
 import edu.eci.cvds.prometeo.service.*;
-
+import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -46,6 +49,9 @@ class UserControllerTest {
     
     @Mock
     private GymSessionService gymSessionService;
+    
+    @Mock
+    private ReportService reportService;
     
     @InjectMocks
     private UserController userController;
@@ -81,7 +87,7 @@ class UserControllerTest {
     public void testGetUserByInstitutionalId() {
         when(userService.getUserByInstitutionalId(anyString())).thenReturn(testUser);
         
-        ResponseEntity<User> response = userController.getUserByInstitutionalId("A12345");
+        ResponseEntity<User> response = (ResponseEntity<User>) userController.getUserByInstitutionalId("A12345");
         
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(testUser, response.getBody());
@@ -111,17 +117,52 @@ class UserControllerTest {
         assertEquals(users, response.getBody());
         verify(userService).getUsersByRole("STUDENT");
     }
-      @Test
-    void testCreateUser() {
-        // Use the exact object instead of any()
-        when(userService.createUser(userDTO)).thenReturn(testUser);
-        
-        ResponseEntity<User> response = userController.createUser(userDTO);
-        
+
+    @Test
+    void createUserSuccessfully() {
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getAttribute("institutionalId")).thenReturn("A12345");
+        when(request.getAttribute("username")).thenReturn("testuser");
+        when(request.getAttribute("name")).thenReturn("Test User");
+        when(request.getAttribute("role")).thenReturn("USER");
+
+        UserDTO userDTO = new UserDTO();
+        userDTO.setInstitutionalId("A12345");
+        userDTO.setName("Test User");
+        userDTO.setRole("USER");
+
+        User createdUser = new User();
+        createdUser.setInstitutionalId("A12345");
+        createdUser.setName("Test User");
+        createdUser.setRole("USER");
+
+        when(userService.userExistsByInstitutionalId("A12345")).thenReturn(false);
+        when(userService.createUser(userDTO)).thenReturn(createdUser);
+
+        ResponseEntity<User> response = userController.createUser(request);
+
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
-        assertEquals(testUser, response.getBody());
+        assertEquals(createdUser, response.getBody());
+        verify(userService).userExistsByInstitutionalId("A12345");
         verify(userService).createUser(userDTO);
     }
+
+    @Test
+    void createUserFailsWhenAttributesAreMissing() {
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getAttribute("institutionalId")).thenReturn(null);
+        when(request.getAttribute("name")).thenReturn("Test User");
+        when(request.getAttribute("role")).thenReturn("USER");
+
+        ResponseEntity<User> response = userController.createUser(request);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        verify(userService, never()).userExistsByInstitutionalId(anyString());
+        verify(userService, never()).createUser(any(UserDTO.class));
+    }
+
+
+
       @Test
     void testUpdateUser() {
         // Use exact matches instead of any()
@@ -1431,5 +1472,106 @@ class UserControllerTest {
         
         // Verify the lambda did the transformation correctly
         verify(userService).createCustomRoutine(eq(userId), any(Routine.class));
+    }
+    
+    @Test
+    public void testGetUserProgressReport() {
+        // Prepare test data
+        UUID userId = UUID.randomUUID();
+        ReportFormat format = ReportFormat.PDF;
+        byte[] mockReportData = "mock report data".getBytes();
+        
+        when(reportService.generateUserProgressReport(userId, format)).thenReturn(mockReportData);
+        
+        ResponseEntity<byte[]> response = userController.getUserProgressReport(userId, format);
+        
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(mockReportData, response.getBody());
+        
+        // Verify the correct content type is set for PDF
+        HttpHeaders headers = response.getHeaders();
+        assertEquals(MediaType.APPLICATION_PDF, headers.getContentType());
+        assertTrue(headers.getContentDisposition().toString().contains("attachment"));
+        assertTrue(headers.getContentDisposition().toString().contains("user_progress_report.pdf"));
+        
+        verify(reportService).generateUserProgressReport(userId, format);
+    }
+    
+    @Test
+    public void testGetGymUsageReport() {
+        // Prepare test data
+        LocalDate startDate = LocalDate.now().minusMonths(1);
+        LocalDate endDate = LocalDate.now();
+        ReportFormat format = ReportFormat.XLSX;
+        byte[] mockReportData = "mock gym usage report data".getBytes();
+        
+        when(reportService.generateGymUsageReport(startDate, endDate, format)).thenReturn(mockReportData);
+        
+        ResponseEntity<byte[]> response = userController.getGymUsageReport(startDate, endDate, format);
+        
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(mockReportData, response.getBody());
+        
+        // Verify the correct content type is set for XLSX
+        HttpHeaders headers = response.getHeaders();
+        assertEquals(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"), 
+                     headers.getContentType());
+        assertTrue(headers.getContentDisposition().toString().contains("attachment"));
+        assertTrue(headers.getContentDisposition().toString().contains("gym_usage_report.xlsx"));
+        
+        verify(reportService).generateGymUsageReport(startDate, endDate, format);
+    }
+    
+    @Test
+    public void testGetAttendanceReport() {
+        // Prepare test data
+        LocalDate startDate = LocalDate.now().minusMonths(1);
+        LocalDate endDate = LocalDate.now();
+        ReportFormat format = ReportFormat.CSV;
+        byte[] mockReportData = "date,attendance\n2023-01-01,42".getBytes();
+        
+        when(reportService.getAttendanceStatistics(startDate, endDate, format)).thenReturn(mockReportData);
+        
+        ResponseEntity<byte[]> response = userController.getAttendanceReport(startDate, endDate, format);
+        
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(mockReportData, response.getBody());
+        
+        // Verify the correct content type is set for CSV
+        HttpHeaders headers = response.getHeaders();
+        assertEquals(MediaType.parseMediaType("text/csv"), headers.getContentType());
+        assertTrue(headers.getContentDisposition().toString().contains("attachment"));
+        assertTrue(headers.getContentDisposition().toString().contains("attendance_report.csv"));
+        
+        verify(reportService).getAttendanceStatistics(startDate, endDate, format);
+    }
+    
+    @Test
+    public void testBuildResponseWithJSON() {
+        // Use reflection to access the private method
+        ReportFormat format = ReportFormat.JSON;
+        byte[] content = "{\"data\": \"test\"}".getBytes();
+        String filenameBase = "test_report";
+        
+        // Create a method that directly invokes buildResponse using reflection
+        ResponseEntity<byte[]> response = null;
+        try {
+            java.lang.reflect.Method buildResponseMethod = UserController.class.getDeclaredMethod(
+                "buildResponse", byte[].class, ReportFormat.class, String.class);
+            buildResponseMethod.setAccessible(true);
+            response = (ResponseEntity<byte[]>) buildResponseMethod.invoke(userController, content, format, filenameBase);
+        } catch (Exception e) {
+            fail("Failed to invoke buildResponse method: " + e.getMessage());
+        }
+        
+        assertNotNull(response);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(content, response.getBody());
+        
+        // Verify JSON content type
+        HttpHeaders headers = response.getHeaders();
+        assertEquals(MediaType.APPLICATION_JSON, headers.getContentType());
+        assertTrue(headers.getContentDisposition().toString().contains("attachment"));
+        assertTrue(headers.getContentDisposition().toString().contains("test_report.json"));
     }
 }

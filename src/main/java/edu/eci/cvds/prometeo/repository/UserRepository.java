@@ -19,6 +19,8 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     List<User> findByRole(String role);
     Optional<User> findByInstitutionalId(String institutionalId);
 
+    boolean existsByInstitutionalId(String institutionalId);
+
     /**
      * Finds all users assigned to a specific trainer.
      * 
