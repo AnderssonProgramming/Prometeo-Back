@@ -29,7 +29,7 @@ public class SecurityConfig {
         http
                 .cors(cors -> {})
                 .csrf(csrf -> csrf.disable())
-                .authorizeHttpRequests(request -> request
+                .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/users/create").authenticated()
                         .requestMatchers("/api/users/trainer/sessions").hasAnyRole("STUDENT", "TRAINER")
                         .requestMatchers("/api/users/trainer/**").hasRole("TRAINER")
@@ -45,7 +45,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("http://localhost:3000"));
+        config.setAllowedOrigins(List.of("**"));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
